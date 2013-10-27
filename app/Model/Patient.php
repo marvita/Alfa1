@@ -65,7 +65,7 @@ class Patient extends AppModel {
 			'order' => 'created ASC',
 			'limit' => '',
 			'offset' => '',
-			'exclusive' => '',
+			'exclusive' => true,
 			'finderQuery' => '',
 			'counterQuery' => ''
 		)
