@@ -55,6 +55,9 @@ $this->start("fields"); ?>
 	<?
 	foreach ($fields as $key => $type) {
 
+    /* Marta: evita mostrar el key en el view. Buscar otra manera */
+    if ($key=='id') {
+    }else{
     		if ( !$this->Entity->hiddenField($key, $type, "form", $fieldConfig, $id) ) {
     			if (isset($options))  {
     				print $this->Entity->field($key, $mode, $options);
@@ -62,7 +65,7 @@ $this->start("fields"); ?>
     				print $this->Entity->field($key, $mode);
     			}
     		}
-    
+    }  
       
 	}
 	//print $this->Form->input("Contact.Task.0.Note.0.Content");
