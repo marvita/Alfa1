@@ -1,0 +1,7 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    #RewriteRule ^(.*)$ index.php [QSA,L]
+RewriteRule ^(.*)$ /www/docs/alfa1argentina.org/public_html/alfa1/app/webroot/index.php [QSA,L]
+</IfModule>

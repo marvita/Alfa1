@@ -1,0 +1,62 @@
+<?
+$this->extend("/form-wrapper");
+
+if (empty($mode)) $mode = "default";
+
+$fields = $this->Entity->entityFields($model);
+$entity = $this->Entity->getModel($model);
+$config = $this->Entity->entityConfig($model, 'Associations');
+$fieldConfig = $this->Entity->entityConfig($model, 'Fields');
+
+$id = $this->Entity->fieldValue("id");
+
+if (!isset($title)) {
+	if ( !isset($this->request->data[$model]["id"]) && !isset($id)) {
+		$title = sprintf(__("Agregar %s"), Inflector::humanize(Inflector::underscore($model)));
+	} else {
+		$title = sprintf(__("Editar %s"), Inflector::humanize(Inflector::underscore($model)));
+	}
+}
+
+foreach (array("belongsTo", "hasMany", "hasAndBelongsToMany", "hasOne") as $assoc) {
+	?>
+	<div class="<?= Inflector::underscore($assoc)?>">
+		<?
+		foreach ($entity->$assoc as $key => $values) {
+			if (!isset($config[$key]['hide']) || (is_array($config[$key]['hide']) && !in_array('form', $config[$key]['hide'])) && ($config[$key]['hide'] != 'form')) {
+				if ($assoc != "hasOne") {
+					print $this->Entity->$assoc($key, "", array("model" => $model));
+				} else {
+					print $this->Entity->form($key, "has_many", $mode);
+				}
+			}
+				
+		}
+		?>
+	</div>
+	<?
+}
+
+$this->assign("title", $title);
+$this->assign("mode", $mode);
+
+if (isset($form_open)) $this->assign("form_open", $form_open);
+if (isset($form_submit)) $this->assign("form_submit", $form_submit);
+
+?>
+<? 
+$this->assign('fields', '');
+$this->start("fields"); ?>
+	<?
+	foreach ($fields as $key => $type) {
+		if ( !$this->Entity->hiddenField($key, $type, "form", $fieldConfig, $id) ) {
+			if (isset($options))  {
+				print $this->Entity->field($key, $mode, $options);
+			} else {
+				print $this->Entity->field($key, $mode);
+			}
+		}
+	}
+	//print $this->Form->input("Contact.Task.0.Note.0.Content");
+	?>
+<? $this->end(); ?>

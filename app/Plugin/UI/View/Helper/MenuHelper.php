@@ -1,0 +1,158 @@
+<?
+App::uses('AppHelper', 'View/Helper');
+
+class MenuHelper extends AppHelper {
+	public $helpers = array('Session', 'Html' => array('className' => 'UI.UIHtml'), 'Form' => array('className' => 'UI.UIForm'), 'Js' => array('className' => 'UI.UIJs'), 'Usermgmt.UserAuth');
+	
+	protected $main = array(
+		"Inicio" => array("url" => "/")
+	);
+	
+	protected $admin = array(
+		"Login" => array("url" => array("controller" => "users", "action" => "login", "plugin" => "usermgmt"), "direct" => true),
+		"Principal" => array("url" => array("controller" => "pages", "action" => "dashboard", "admin" => false, "plugin" => false), "direct" => true),
+		"Usuarios" => array("url" => array("controller" => "users", "action" => "index", "plugin" => "usermgmt")),
+		"Pacientes" => array("url" => array("controller" => "patients", "action" => "index", "plugin" => false), "children" => array(
+			"Anual Pendiente" => array("url" => array("controller" => "patients", "action" => "index", "type" => "pending", "plugin" => false)),
+		)),
+		"Fichas" => array("url" => array("controller" => "patient_files", "action" => "index", "plugin" => false), "children" => array(
+			"Incompletas" => array("url" => array("controller" => "patient_files", "action" => "index", "type" => "incomplete", "plugin" => false)),
+		)),
+		"Perfil" => array("url" => array("controller" => "users", "action" => "myprofile", "plugin" => "usermgmt"), "children" => array(
+			"Contraseña" => array("url" => array("controller" => "users", "action" => "changePassword", "plugin" => "usermgmt")),
+		)),
+		
+		"Estadísticas" => array("url" => array("controller" => "pages", "action" => "statistics", "admin" => false, "plugin" => false)),
+		"Logout" => array("url" => array("controller" => "users", "action" => "logout", "plugin" => "usermgmt"), "direct" => true)
+	);
+	
+	public function hasAccess($url) {
+		/*if(!defined("DEFAULT_GROUP_ID")) {
+			UsermgmtInIt($this);
+		}*/
+		//return true;
+		//pr($url);
+		if (is_array($url)) {
+			$controller = isset($url['controller']) ? $url["controller"] : $this->request->params["controller"];
+			$action = !empty($url['action']) ? $url["action"] : $this->request->params["action"];
+			$actionUrl = $controller.'/'.$action;
+		} elseif ($url == "/") {
+			return true;
+		} else {
+			$params = Router::parse($url);
+			$actionUrl = $params["controller"]."/".$params["action"];
+			$controller = $params["controller"];
+			$action = $params["action"];
+		}
+		
+		$permissionFree=array('pages/dashboard', 'users/register', 'users/userVerification', 'users/forgotPassword', 'users/activatePassword', 'pages/display', 'users/accessDenied');
+		
+		if ($this->UserAuth->isLogged()) {
+			$permissionFree[] = 'users/logout';
+		} else {
+			$permissionFree[] = 'users/login'; 
+		}
+		
+		if ( !in_array($actionUrl, $permissionFree) ) {
+			if (in_array($actionUrl, array("users/login", "users/logout"))) return false;
+			App::import("Model", "Usermgmt.UserGroup");
+			$userGroupModel = new UserGroup;
+			
+			if (!$this->UserAuth->isLogged()) {
+				return $userGroupModel->isGuestAccess($controller, $action);
+			} else {
+				return 
+					$userGroupModel->isUserGroupAccess($controller, $action, $this->UserAuth->getGroupId()) || 
+					(!in_array($controller, array("users", "user_groups")) && $userGroupModel->isUserGroupAccess("app", $action, $this->UserAuth->getGroupId()));
+			}
+		} else return true;
+	}
+	
+	public function menu($menu, $menucl = array(), $itemcl = "item", $titlecl = "title", $titletag = "", $firstcl = "first", $lastcl = "last", $evencl = "even", $oddcl = "odd", $activecl = "active") {
+		$c = array_shift($menucl);
+		$out = "<ul class='menu $c'>\n";
+		
+		$context = (Configure::read("UI.rootContext") ? Configure::read("UI.rootContext") : "#content" );
+		
+		$i = 0;
+		$total = count($menu);
+		foreach ($menu as $key => $m) {
+			if ( $this->hasAccess($m["url"]) ) {
+				if (!$i) {
+					$class = $firstcl;
+				} elseif ($i == $total-1) {
+					$class = $lastcl;
+				} else {
+					$class = "";
+				}
+				
+				if ($i % 2 == 0) $class .= " $evencl"; else $class .= " $oddcl";
+				if (isset($m["url"])) {
+					if (Router::url($m["url"]) == Router::url()) {
+						$class .= " active";
+					}
+				}
+				$out .= "<li class='$itemcl $class'>\n";
+				if ($titletag != "") {
+					$title = "<$titletag class='title'>$key</$titletag>";
+				} else {
+					$title = $key;
+				}
+				if (isset($m["url"])) {
+					if (isset($m["direct"])) {
+						$out .= $this->Html->link($title, $m["url"], array("escape" => false));
+					} else {
+						$out .= $this->Js->link($title, $m["url"], array("update" => $context, "context" => $context, "escape" => false, "complete" => "$(event.currentTarget).parents('ul').last().find('li').removeClass('active'); $(event.currentTarget).parents('li').addClass('active');"));
+					}
+				} else {
+					$out .= "<a href='#'>$title</a>\n";
+				}
+				
+				if (isset($m["children"])) {
+					$out .= $this->menu($m["children"], $menucl, $itemcl, $titlecl, $titletag, $firstcl, $lastcl, $evencl, $oddcl);
+				}
+				
+				$out .= "</li>";
+			}
+			$i++;
+		}
+		
+		$out .= '</ul>';
+		
+		return $out;
+	}
+	
+	
+	public function main($menucl = array("main"), $itemcl = "item", $titlecl = "title", $titletag = "", $firstcl = "first", $lastcl = "last", $evencl = "even", $oddcl = "odd") {
+		return $this->menu($this->main, $menucl, $itemcl, $titlecl, $titletag, $firstcl, $lastcl, $evencl, $oddcl );
+	}
+	
+	public function admin($menucl = array("admin"), $itemcl = "item", $titlecl = "title", $titletag = "", $firstcl = "first", $lastcl = "last", $evencl = "even", $oddcl = "odd") {
+		return $this->menu($this->admin, $menucl, $itemcl, $titlecl, $titletag, $firstcl, $lastcl, $evencl, $oddcl );
+	}
+	
+	public function categories($menucl = array("admin"), $itemcl = "item", $titlecl = "title", $titletag = "", $firstcl = "first", $lastcl = "last", $evencl = "even", $oddcl = "odd") {
+		App::uses('Category', 'Model');
+		$c = new Category;
+		$c->contain(array());
+		$t = $c->find('threaded');
+		
+		$categories = $this->threadedToMenu($c->find('threaded'));
+		
+		return $this->menu($categories, $menucl, $itemcl, $titlecl, $titletag, $firstcl, $lastcl, $evencl, $oddcl );
+	}
+	
+	private function threadedToMenu($data, $model = "Category", $urlPattern = "/products/index/{category_id}") {
+		$menu = array();
+		
+		foreach ($data as $value) {
+			$item = array ("url" => "/products/index/{$value["Category"]["id"]}" );
+			if (isset($value["children"])) {
+				$item["children"] = $this->threadedToMenu($value["children"]);
+			}
+			$menu[$value["Category"]["Nombre"]] = $item;
+		}
+		
+		return $menu;
+	}
+}

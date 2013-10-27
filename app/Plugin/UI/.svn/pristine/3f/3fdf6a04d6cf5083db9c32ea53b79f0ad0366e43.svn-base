@@ -1,0 +1,36 @@
+<?
+$fields = $this->Entity->entityFields($model);
+$entity = $this->Entity->getModel($model);
+$config = $this->Entity->entityConfig($model, 'Associations');
+?>
+<div class="form <?= Inflector::underscore($this->request->controller) ?> <?= Inflector::underscore($this->request->action) ?> mode-<?= $mode ?>">
+	
+	<div class="fields">
+		<?
+		foreach ($fields as $key => $type) {
+			if (substr($key, -3) != "_id" && ($key != "id" || $this->request->action != "add")) {
+				print $this->Entity->field($key);
+			}
+		}
+		//print $this->Form->input("Contact.Task.0.Note.0.Content");
+		?>
+	</div>
+	
+	<div class="associations">
+		<?
+		foreach (array("belongsTo", "hasMany", "hasAndBelongsToMany", "hasOne") as $assoc) {
+			?>
+			<div class="<?= Inflector::underscore($assoc)?>">
+				<?
+				foreach ($entity->$assoc as $key => $values) {
+					print $this->Entity->$assoc($key, "", array("model" => $model));
+				}
+				?>
+			</div>
+			<?
+		}
+		?>
+	</div>
+	
+	
+</div>

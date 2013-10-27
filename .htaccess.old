@@ -1,0 +1,10 @@
+<IfModule mod_rewrite.c>
+   RewriteEngine on
+   RewriteRule    ^$ app/webroot/    [L]
+   #RewriteRule    (.*) app/webroot/$1 [L]
+   #
+   #RewriteRule    ^$ /www/docs/alfa1argentina.org/public_html/registro/app/webroot/$1    [L]
+   RewriteRule    (.*) /www/docs/alfa1argentina.org/public_html/alfa1/app/webroot/$1  [L]
+   #
+   #
+</IfModule>

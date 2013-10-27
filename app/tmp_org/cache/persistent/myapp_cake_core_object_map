@@ -1,0 +1,2 @@
+1467210147
+a:2:{i:0;b:0;s:3:"app";a:2:{s:10:"Controller";a:4:{i:0;s:13:"AppController";i:1;s:15:"PagesController";i:2;s:22:"PatientFilesController";i:3;s:18:"PatientsController";}s:7:"plugins";a:5:{i:0;s:15:"AjaxMultiUpload";i:1;s:8:"DebugKit";i:2;s:2:"UI";i:3;s:6:"Upload";i:4;s:8:"Usermgmt";}}}

@@ -1,0 +1,14 @@
+<? if (!isset($mode)) $mode = "default"; ?>
+<? echo $this->fetch("form_open"); ?>
+<div style=""><h3><? echo $this->fetch("title") ?></h3></div>
+<div class="form <?= Inflector::underscore($this->request->controller) ?> <?= Inflector::underscore($this->request->action) ?> mode-<?= $mode ?>">
+	<div class="fields">
+		<?= $this->fetch("fields") ?>
+	</div>
+
+	<div class="associations">
+		<?= $this->fetch("associations") ?>
+	</div>
+</div>
+<? echo $this->fetch("form_submit"); ?>
+<? echo $this->Form->end(); ?>

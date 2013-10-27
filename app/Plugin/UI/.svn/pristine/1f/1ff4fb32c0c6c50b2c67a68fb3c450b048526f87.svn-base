@@ -1,0 +1,93 @@
+<?php
+
+App::uses('Controller', 'Controller');
+App::uses('Assets', 'Dinamo');
+
+class DinamoAppController extends Controller {
+	public $helpers = array(
+		'Js' => array('className' => 'DinamoJs'), 
+		'Time', 
+		'Html' => array('className' => 'DinamoHtml'), 
+		'Session', 
+		'Form' => array("className" => "DinamoForm"), 
+		'Usermgmt.UserAuth', 
+		'Menu'
+	);
+	public $components = array('Session', 'Usermgmt.UserAuth', 'RequestHandler', "Search");
+	//public $uses = array("Customer");
+	
+	function beforeFilter() {
+		//$this->Discount->id = null;
+		if (@$this->request->params["admin"]) {
+			
+			$this->theme = "Admin";
+		} else {
+			$this->theme = "Recepcion";
+			//$this->theme = "SanMartin";
+			
+		}
+		//$this->theme = "Admin";
+		
+		if (!defined("WEBROOT_DIR_THEME")) define("WEBROOT_DIR_THEME", APP."View".DS."Themed".DS.$this->theme.DS."webroot".DS);
+		if (!defined("IMAGES_THEME")) define("IMAGES_THEME", APP."View".DS."Themed".DS.$this->theme.DS."webroot".DS."img".DS);
+		if (!defined("CSS_THEME")) define("CSS_THEME", APP."View".DS."Themed".DS.$this->theme.DS."webroot".DS."css".DS);
+		if (!defined("JS_THEME")) define("JS_THEME", APP."View".DS."Themed".DS.$this->theme.DS."webroot".DS."js".DS);
+		
+		$this->userAuth();
+		
+		if (isset($this->request->named["context"])) {
+			$this->set("context", $this->request->named["context"]);
+		} else {
+			$this->set("context", ";#content");
+		}
+		
+		$this->set("controller", $this->request->controller);
+		$this->set("action", $this->request->action);
+		
+		if ($this->request->action == "index") {
+			//pr($this->request);
+			CakeSession::write("lastindex", $this->request->params);
+		}
+		Configure::write("DinamoJsHelperLoadingPopupModal", false);
+		Configure::write("DinamoJsHelperLoadingPopupHeight", 50);
+		Configure::write("DinamoJsHelperLoadingPopupWidth", 50);
+    }
+	
+	public function redirect($url, $status = null, $exit = true) {
+		if (CakeSession::read('validationError')) {
+			if(isset($this->request->named["submitErrorContext"])) $url["context"] = $this->request->named["submitErrorContext"];
+		} else {
+			if(isset($this->request->named["submitSuccessContext"])) $url["context"] = $this->request->named["submitSuccessContext"];
+		}
+		
+		if (!isset($url["context"]) && isset($this->request->named["context"])) {
+			$url["context"] = $this->request->named["context"];
+		}
+		parent::redirect($url, $status, $exit);
+	}
+	
+	private function userAuth(){
+    	$this->UserAuth->beforeFilter($this);
+		/*if ($this->UserAuth->isLogged()) {
+			$this->set("Customer", $this->Customer->find("first", array("user_id" => $this->Authake->getUserId())));
+		}*/
+	}
+	
+	function addBodyClass($class) {
+		if (!isset($this->bodyClasses)) $this->bodyClasses = array();
+		
+		$this->bodyClasses[] = $class;
+	}
+	
+	function beforeRender() {
+		if (isset($this->bodyClasses)) {
+			$this->set("bodyClass", implode(" ", $this->bodyClasses));
+		} else $this->set("bodyClass", "");
+		
+		if (CakeSession::read('validationError')) {
+			if(isset($this->request->named["submitErrorContext"])) $this->set("context", $this->request->named["submitErrorContext"]);
+		} else {
+			if(isset($this->request->named["submitSuccessContext"])) $this->set("context", $this->request->named["submitSuccessContext"]);
+		}
+	}
+}

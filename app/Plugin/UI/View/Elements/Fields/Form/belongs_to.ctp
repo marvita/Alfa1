@@ -1,0 +1,50 @@
+<?
+list($plugin, $association) = pluginSplit($association);
+$plugin = Inflector::underscore($plugin);
+$controller = Inflector::underscore(Inflector::pluralize($association));
+$aliasClass = Inflector::underscore($alias);
+$baseModelClass = Inflector::underscore($model);
+$associationClass = $association != $alias ? Inflector::underscore($association) : "";
+$associationConfig = $this->Entity->entityConfig($model, "Associations", $alias);
+
+if (!isset($valueField)) {
+	$valueField = Inflector::underscore(Inflector::singularize($alias))."_id";
+}
+
+$valueFieldName = $this->Entity->parentPathField();
+if ($valueFieldName != "") $valueFieldName .= ".";
+$valueFieldName .= $valueField;
+
+$valueFieldID = $this->Entity->parentPathID() . Inflector::camelize($valueField);
+
+$context = $this->Js->currentContext();
+
+// the base path that this associated model should have when calling it as a FormAuthenticate
+// (without index for multiple associations like hasmany)
+$associatedBasePath = $this->Entity->currentPathField();
+if ($associatedBasePath != "") $associatedBasePath .= ".";
+$associatedBasePath .= $alias;
+
+$addMode = @$config["addMode"] ? $config["addMode"] : "popup";
+$mode = @$config["mode"] ? $config["mode"] : "hybrid";
+$addOrder = @$config["addOrder"] ? $config["addOrder"] : "html";
+$template = "belongs_to";
+
+?>
+<div class="association belongs_to <?= $aliasClass ?> base-<?= $baseModelClass ?> <?= $associationClass ?>">
+	<?= $this->Form->input($valueFieldName, array("type" => "hidden")) ?>
+	<h3><?= isset($associationConfig["label"]) ? $associationConfig["label"] : Inflector::humanize($alias) ?>
+	<div class="actions">
+		<?= $this->element("UI.autocomplete", compact("controller", "plugin", "association", "alias", 'mode', 'valueFieldID', 'template', 'addOrder', "callback")) ?>
+		<? /*<?= $this->Js->popup(
+			$this->Html->image("UI.action-list.png"),
+			array("controller" => $controller, "action" => "select", "plugin" => ($plugin ? $plugin : false), isset($id) ? $id : null),
+			array("width" => "90%", "callBack" => "fillView", "callBackTargetPath" => ".belongsto .entity", 'escape' => false )
+		) ?> */ ?>
+		<?= $this->element("UI.Links/belongs_to-add-$addMode", compact("controller", "associatedBasePath", "plugin", "id", "context", "mode", "addOrder")) ?>
+	</div>
+	</h3>
+	<div class="entity" id="<?= $this->Entity->currentPathID() . $alias?>">
+		<?= $this->Entity->form($alias, "belongs_to", $mode) ?>
+	</div>
+</div>

@@ -1,0 +1,203 @@
+<?php
+
+App::uses('Model', 'Model');
+App::uses('I18n', 'I18n');
+App::uses('UIModelBehavior', 'UI.Model/Behavior');
+
+class UIAppModel extends Model {
+	public $actsAs = array(
+		'Containable', "UI.UIModel"
+	);
+	
+	public function beforeFind($q) {
+		if ($this->hasField("active") || $this->hasField("Active")) {
+			$activeField = $this->hasField("Active") ? "Active" : "active";
+			if ( !isset($q["conditions"][$activeField]) && !isset($q["conditions"][$this->alias.".$activeField"]) ) {
+				$q["conditions"][$this->alias.".$activeField"] = "1";
+			}
+		}
+		
+		return $q;
+	}
+	
+	public function delete($id = null, $cascade = true) {
+		if ($this->hasField("active") || $this->hasField("Active")) {
+			$activeField = $this->hasField("Active") ? "Active" : "active";
+			
+			if (!empty($id)) {
+				$this->id = $id;
+			}
+			$id = $this->id;
+	
+			if ($this->beforeDelete($cascade)) {
+				$filters = $this->Behaviors->trigger(
+					'beforeDelete',
+					array(&$this, $cascade),
+					array('break' => true, 'breakOn' => array(false, null))
+				);
+				if (!$filters || !$this->exists()) {
+					return false;
+				}
+				$db = $this->getDataSource();
+	
+				$this->_deleteDependent($id, $cascade);
+				$this->_deleteLinks($id);
+				$this->id = $id;
+	
+				$updateCounterCache = false;
+				if (!empty($this->belongsTo)) {
+					foreach ($this->belongsTo as $parent => $assoc) {
+						if (!empty($assoc['counterCache'])) {
+							$updateCounterCache = true;
+							break;
+						}
+					}
+	
+					$keys = $this->find('first', array(
+						'fields' => $this->_collectForeignKeys(),
+						'conditions' => array($this->alias . '.' . $this->primaryKey => $id),
+						'recursive' => -1,
+						'callbacks' => false
+					));
+				}
+	
+				//if ($db->delete($this, array($this->alias . '.' . $this->primaryKey => $id))) {
+				if ($this->saveField($activeField, "0")) {
+					if ($updateCounterCache) {
+						$this->updateCounterCache($keys[$this->alias]);
+					}
+					$this->Behaviors->trigger('afterDelete', array(&$this));
+					$this->afterDelete();
+					$this->_clearCache();
+					$this->id = false;
+					return true;
+				}
+			}
+			return false;
+		
+		} else return parent::delete($id, $cascade);
+	}
+	
+	private function array_numeric(&$my_array) {
+		for (reset($my_array); is_int(key($my_array)); next($my_array));
+		return is_null(key($my_array));
+	}
+	
+	public function afterFind($results, $primary) {
+		//if (!$primary) { pr("not primary");pr($results); }
+		$results = parent::afterFind($results, $primary);
+		
+		$model = $this->alias;
+		
+		try {
+			$result = Configure::load($model, "objects");
+			$config = Configure::read("$model.Fields");
+		} catch (Exception $e) {
+			return $results;
+		}
+		
+		// extract functions so we don't have to run through the config array for each field
+		$fillFuncs = array();
+		if ($config) {
+			foreach ($config as $key => $opts) {
+				if (is_array($opts) && isset($opts["fillFunc"])) {
+					$fillFuncs[$key] = $opts["fillFunc"];
+				}
+			}
+		}
+		
+		if (empty($fillFuncs)) return $results;
+		
+		if ($this->array_numeric($results)) {
+			foreach ($results as &$value) {
+				foreach ($fillFuncs as $field => $func) {
+					if (isset($value[$model][$field])) {
+						$value[$model][$field] = $func($value[$model][$field]);
+					} elseif (isset($value[$field])) {
+						$value[$field] = $func($value[$field]);
+					}
+				}
+			}
+		} else {
+			foreach ($fillFuncs as $field => $func) {
+				if (isset($fillFuncs["fillFunc"])) {
+					if (isset($results[$model][$field])) {
+						$results[$model][$field] = $func($results[$model][$field]);
+					} elseif (isset($results[$field])) {
+						$results[$field] = $func($results[$field]);
+					}
+				}
+			}
+		}
+		
+		return $results;
+	}
+	
+	/*public function validates($options = array()) {
+		$result = parent::validates($options);
+		
+		CakeSession::write("validationError", CakeSession::read("validationError") || (!$result) );
+		
+		return $result;
+	}*/
+	public function afterValidate() {
+		CakeSession::write("validationError", CakeSession::read("validationError") || (!empty($this->validationErrors)) );
+	}
+	
+	public function beforeSave() {
+		if (! parent::beforeSave()) return false;
+		
+		$model = $this->alias;
+		
+		try {
+			Configure::load($model, "objects");
+			$config = Configure::read("$model.Fields");
+		} catch (Exception $e) {
+			return true;
+		}
+		
+		foreach ($this->data[$model] as $key => &$value) {
+			if (isset($config[$key]) && is_array($config[$key]) && isset($config[$key]["saveFunc"])) {
+				$func = $config[$key]["saveFunc"];
+				$value = $func($value);
+			}
+		}
+		
+		return true;
+	}
+
+	public function saveAssociated($data = null, $options = array()) {
+		foreach ($data as $alias => $modelData) {
+			if (!empty($this->hasAndBelongsToMany[$alias])) {
+				$habtm = array();
+				$validationErrors = array();
+				$Model = ClassRegistry::init($this->hasAndBelongsToMany[$alias]['className']);
+				// first validate
+				//if (!isset($options["validate"]) || $options["validate"] != "only") {
+				foreach ($modelData as $key => $modelDatum) {
+					if(!$Model->validateAssociated($modelDatum, $options)) {
+						// copy the validation errors
+						$validationErrors[$key] = $Model->validationErrors;
+					}
+				}
+
+				if (empty($validationErrors) && (!isset($options["validate"]) || $options["validate"] != "only") ) {
+					foreach ($modelData as $key => $modelDatum) {
+						if (empty($modelDatum['id'])) {
+							$Model->create();
+						}
+						if ($Model->saveAssociated($modelDatum, $options)) {
+							$habtm[] = empty($modelDatum['id']) ? $Model->getInsertID() : $modelDatum['id'];
+						} else {
+							// copy the validation errors
+							$validationErrors[$key] = $Model->validationErrors;
+						}
+					}
+					$data[$alias] = array($alias => $habtm);
+				} else $Model->validationErrors = $validationErrors;
+			}
+		}
+		return parent::saveAssociated($data, $options);
+	}
+
+}

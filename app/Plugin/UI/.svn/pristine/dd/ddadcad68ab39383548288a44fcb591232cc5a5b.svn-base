@@ -1,0 +1,350 @@
+<?php
+
+class Entity {
+	protected static $_models = array();
+	protected static $_configs = array();
+	private static $_entityPath = array();
+	private static $_entityPathClass = array();
+	protected static $_modelScope = "";
+	protected static $_request = null;
+	
+	/**
+	* Returns a model config, o a specific key of that config
+	* @param model $model
+	* @param key to return $key
+	* 
+	*/
+	public static function entityConfig($model, $section, $key = null) {
+		if (!isset(self::$_configs[$model])) {
+			try {
+				Configure::load($model, "objects");
+				self::$_configs[$model] = Configure::read("$model");
+			} catch (Exception $e) {
+				self::$_configs[$model] = array();
+			}
+		}
+		
+		if ($key == null) {
+			if (!isset(self::$_configs[$model][$section])) {
+				return null;
+			} else {
+				return self::$_configs[$model][$section];
+			}
+		}
+		
+		if (!isset(self::$_configs[$model][$section][$key])) {
+			return null;
+		} else {
+			return self::$_configs[$model][$section][$key];
+		}
+	}
+	
+	public static function _setEntityPath($entityPath, $base = false) {
+		if (is_string($entityPath))
+			$entityPath = explode(".", $entityPath);
+		
+		self::$_entityPath = array_merge(self::$_entityPath, $entityPath);
+		//CakeLog::write("debug", print_r(self::$_entityPath, true));
+		//CakeLog::write("debug", print_r(self::$_entityPathClass, true));
+
+		// take the current last path class model and use it to determine association class names
+		if (!count(self::$_entityPathClass)) {
+			if ($base){
+				//pr("base tomando model ".$entityPath[0]);
+				$obj = self::getModel($entityPath[0]);
+				self::$_entityPathClass[] = $entityPath[0];
+				$entityPath = array_slice($entityPath, 1);
+			} else {
+				//CakeLog::write("debug", "obteniendo moelscope");
+				//pr("no base tomando model ".Entity::getModelScope());
+				$obj = self::getModel(Entity::getModelScope());
+			}
+		} else {
+			//pr("de pathclass tomando model ".self::$_entityPathClass[count(self::$_entityPathClass)-1]);
+			//pr("de pathclass tomando model ".self::$_entityPathClass[count(self::$_entityPathClass)-1]);
+			$obj = self::getModel(self::$_entityPathClass[count(self::$_entityPathClass)-1]);
+		}
+		
+		foreach ($entityPath as $association) {
+			if (!is_numeric($association)) {
+				$associations = $obj->getAssociated();
+				$type = $associations[$association];
+				
+				$associations = $obj->$type;
+				
+				if (isset($associations[$association]["className"])) {
+					$nextClass = $associations[$association]["className"];
+				} else {
+					$nextClass = $association;
+				}
+				
+				self::$_entityPathClass[] = $nextClass;
+				
+				$obj = self::getModel($nextClass);
+			}
+		}
+		
+	}
+	
+	public static function setRequest($request) {
+		self::$_request = $request;
+	}
+	
+	public static function setModelScope($model) {
+		self::$_modelScope = $model;
+	}
+	
+	public static function getModelScope() {
+		if (self::$_modelScope)
+			return self::$_modelScope;
+		elseif (isset(self::$_request->params["named"]["modelScope"])) {
+			return self::$_request->params["named"]["modelScope"];
+		} else {
+			return Inflector::singularize( Inflector::camelize(self::$_request->controller));
+		}
+	}
+	
+	protected static function _getPathComponent(&$path, $offset) {
+		$i = count($path);
+		while ($i > 0) {
+			if (!is_numeric($path[$i - 1])) {
+				if (--$offset == 0) {
+					return $path[$i - 1];
+				}
+			}
+			$i--;
+		}
+		
+		return (self::$_modelScope ? self::$_modelScope : Inflector::singularize(Inflector::camelize(self::$_request->controller)));
+	}
+	
+	public static function currentPathName() {
+		return self::_getPathComponent(self::$_entityPath, 1);
+	}
+	
+	public static function parentPathName() {
+		return self::_getPathComponent(self::$_entityPath, 2);
+	}
+	
+	public static function currentPathClass() {
+		return self::_getPathComponent(self::$_entityPathClass, 1);
+	}
+	
+	public static function parentPathClass() {
+		return self::_getPathComponent(self::$_entityPathClass, 2);
+	}
+	
+	public static function _revertEntityPath($amount = 1) {
+		for ($i = 0; $i < $amount; $i++) {
+			// when we added items to the path we added numeric ones without adding to the path classes. We revert that now
+			do {
+				$p = array_pop(self::$_entityPath);
+			} while (is_numeric($p));
+			
+			array_pop(self::$_entityPathClass);
+		}
+	}
+	
+	public static function currentPathID() {
+		if (!count(self::$_entityPath)) {
+			return self::getModelScope();
+		}
+		return implode("", self::$_entityPath);
+	}
+	
+	public static function currentPathField() {
+		return implode(".", self::$_entityPath);
+	}
+	
+	public static function currentPathSelector() {
+		$selector = "";
+		
+		foreach (self::$_entityPath as $key => $relation) {
+			// if the last component is numeric, remove it
+			if ( ($key < count(self::$_entityPath) -1) || (!is_numeric($relation)) )
+				$selector .= "." . Inflector::underscore($relation) . " ";
+		}
+		return $selector . " > .entity";
+	}
+	
+	public static function parentPathID() {
+		if (count(self::$_entityPath) > 0) return implode("", array_slice(self::$_entityPath, 0, -1));
+		else return self::$_modelScope;
+		
+	}
+	
+	public static function parentPathField() {
+		if (count(self::$_entityPath) > 0) return implode(".", array_slice(self::$_entityPath, 0, -1));
+		else return self::$_modelScope;
+	}
+	
+	public static function getModel($model) {
+		/*static $repetitions;
+		$repetitions++;
+		if ($repetitions > 200) throw new Exception("repeticiones alcanzadas $repetitions");*/
+	
+		if ($model == "") throw new Exception("empty classname");
+		
+		list($plugin, $model) = pluginSplit($model);
+		
+		if ($plugin) {
+			App::uses($model, $plugin . ".Model");
+		} else {
+			App::uses($model, "Model");
+		}
+		
+		if (!class_exists($model)) throw new Exception("class not loaded $model");
+			
+		if (!isset(self::$_models[$model])) {
+			self::$_models[$model] = new $model;
+		}
+		
+		return self::$_models[$model];
+	}
+	
+	public static function transposeData(&$data, $model = null, $basePath = null) {
+		$basePath = $basePath !== null ? $basePath : ( isset(self::$_request->params['named']['basePath']) ? self::$_request->params['named']['basePath'] : null );
+		
+		if ($basePath !== null) {
+			
+			if ($basePath != "")
+				$path = explode(".", $basePath);
+			else $path = array();
+			
+			// model will surely be the controller we're using, as the path would be the alias
+			$model = $model !== null ? $model : Inflector::camelize(Inflector::singularize(self::$_request->controller));
+			
+			// now we move the data where we need it to let the helpers get the fields values automatically
+			if (isset($data[$model])) {
+				foreach ($data[$model] as $key => &$value) {
+					$data[$key] = &$value;
+				}
+			}
+			
+			unset ($data[$model]);
+			
+			if (count($path)) {
+				$newdata = array();
+				$currentPath = &$newdata;
+				foreach ($path as $component) {
+					$newstep = array();
+					$currentPath[$component] = &$newstep;
+					$currentPath = &$newstep;
+					unset($newstep);
+					
+				}
+				
+				foreach ($data as $key => &$value) {
+					$currentPath[$key] = &$value;
+				}
+			
+				$data = &$newdata;
+			}
+		}
+		
+		return $data;
+	}
+
+	public static function unTransposeData(&$data) {
+		$baseModel = self::getModelScope();
+
+		if (!isset($data[$baseModel])) {
+			$obj = self::getModel($model);
+			$associations = $obj->getAssociated();
+			$data[$baseModel] = array();
+			foreach ($data as $key => &$sdata) {
+				if (!in_array($key, array_keys($associations))) {
+					$data[$baseModel][$key] = &$sdata;
+					unset($data[$key]);
+				}
+			}
+		}
+	}
+
+	public static function & getDataValue(&$data, $entityPath = null) {
+		if ($entityPath === null) $entityPath = self::$_entityPath;
+
+		$d = &$data;
+		if (count($entityPath)) {
+			foreach ($entityPath as $component) {
+				if (isset($d[$component]))
+					$d = &$d[$component];
+				else {
+					$result = false;
+					return $result;
+				}
+			}
+			return $d;
+		} else {
+			$result = false;
+			return $result;
+		}
+	}
+
+	protected static function & processAjaxDeleted(&$data, $alias, $association) {
+		if (Hash::numeric(array_keys($data))) {
+			foreach ($data as $key => &$item) {
+				$result = self::processAjaxDeleted($item, $alias, $association);
+				if (empty($result)) {
+					unset($data[$key]);
+				} else {
+					pr("recibido resultado no vacio procesando array numerico");
+					pr($result);
+					$item = $result;
+				}
+			}
+			return $data;
+		}
+
+		self::_setEntityPath($alias);
+		$model = self::getModel(self::currentPathClass());
+		
+		// check if there is an __ajax_deleted field
+		if (isset($data["__ajax_deleted"]) && $data["__ajax_deleted"]) {
+			// has many have to be deleted... habtm must be removed from the array...
+			switch ($association) {
+				case "hasMany":
+					if (isset($data["id"])) {
+						//pr("eliminando item modelo $alias id {$data["id"]}");
+						$model->delete($data["id"]);
+					}
+				case "hasAndBelongsToMany":
+					self::_revertEntityPath();
+					$result = array();
+					return $result;
+				break;
+			}
+		}
+		$associations = $model->getAssociated();
+		foreach ($data as $key => &$sdata) {
+			if (array_key_exists($key, $associations)) {
+				$dsata = self::processAjaxDeleted($sdata, $key, $associations[$key]);
+			}
+		}
+
+		self::_revertEntityPath();
+		return $data;
+	}
+
+	public static function & deleteAjaxDeleted(&$data) {
+		// we start in the main model and go recursive
+		$model = self::getModelScope();
+pr($model);
+		//if (!isset($data[$baseModel])) {
+			$obj = self::getModel($model);
+			$associations = $obj->getAssociated();
+			pr ("model es $model");
+			pr($associations);
+			foreach ($data as $key => &$sdata) {
+				if (array_key_exists($key, $associations)) {
+					pr("procesando subarray $key, con association ".$associations[$key]);
+					$sdata = self::processAjaxDeleted($sdata, $key, $associations[$key]);
+				}
+			}
+		//}
+
+		return $data;
+	}
+}
+
+?>

@@ -1,0 +1,120 @@
+.ui-autocomplete { z-index: 1000;}
+.ajax-breadcrumb {display: none;}
+/*header {display: none;}
+#main_navigation {display: none;}*/
+.popup .widgets_area { padding: 0; text-align: left;
+border-top: 1px solid #5db2ff;
+border-left: 1px solid #5db2ff;
+border-right: 1px solid #5db2ff;
+border-bottom: 1px solid #5db2ff;
+padding-bottom: 10px;}
+
+.ui-dialog .ui-dialog-titlebar {display: none;}
+
+.popup .widgets_area .row-fluid .span6 { width: 100%;}
+
+.ui-dialog, .ui-dialog .ui-dialog-content { padding: 0; }
+
+.well.light_blue .well-content  {border: 0; padding-bottom: 0;}
+
+div.submit input[type=submit] {
+	display: inline-block;
+	padding: 5px 10px;
+	margin-bottom: 0;
+	font-size: 12px;
+	line-height: 20px;
+	color: #333;
+	text-align: center;
+	vertical-align: middle;
+	cursor: pointer;
+	background-color: #e5e5e5;
+	background-repeat: repeat-x;
+	border: none !important;
+	outline: none !important;
+}
+
+.associations { margin-top: 15px;}
+
+.ui-widget .input-append input, 
+.ui-widget .input-append select, 
+.ui-widget .input-append textarea, 
+.ui-widget .input-append button {
+	font-size: 12px;
+}
+
+.association {
+	border: solid #555 1px;
+	padding: 10px;
+	margin-bottom: 10px;
+}
+
+.association h3 {
+	margin: 0;
+	font-size: 14px;
+	line-height: 20px;
+	margin-bottom: 5px;
+	font-weight: bold;
+}
+.association .well {
+	margin-bottom: 0;
+}
+.form_row { margin-bottom: 5px;}
+
+.form_row.inline_block .field {
+	vertical-align: top;
+	min-height: 30px;
+}
+
+.belongs_to.patient.base-patient_file .field_fecha_nacimiento,
+.belongs_to.patient.base-patient_file .field_patient-genero,
+.belongs_to.patient.base-patient_file .field_altura,
+.belongs_to.patient.base-patient_file .field_patient-unidad_altura,
+.belongs_to.patient.base-patient_file .field_peso,
+.belongs_to.patient.base-patient_file .field_consentimiento_firmado {
+	display: none;
+}
+
+.editLinks {
+	display: none;
+}
+
+.association h3 .actions {display: inline;}
+
+.field-mode-hybrid .element-edit {
+	display: none;
+}
+.form.mode-hybrid.editing .field-mode-hybrid .element-edit {
+	display: block;
+}
+.form.mode-hybrid.editing .field-mode-hybrid .element-view {
+	display: none;
+}
+.form.deleted .field.view {
+	text-decoration: line-through;
+}
+.field-mode-hybrid .element-edit, .form.deleted .field-mode-hybrid .element-edit {
+	display: none;
+}
+.form.deleted.editing .field-mode-hybrid .element-edit {
+	display: none;
+}
+.form.deleted.editing .field-mode-hybrid .element-view {
+	display: block;
+}
+.form .editLinks {
+	display: none;
+}
+.form.mode-hybrid.editing .editLinks {
+	display: block;
+}
+
+.form.deleted > div { display: none;}
+.form.deleted > div.contextLinks { display: block;}
+.form div.contextLinks .edit { display: none;}
+.form div.contextLinks .undo { display: none;}
+.form.deleted div.contextLinks .undo { display: inline;}
+.form.deleted div.contextLinks .delete { display: none;}
+
+.span6.input-append.date.form_datetime2 {
+    width: 135px;
+}

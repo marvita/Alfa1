@@ -1,0 +1,14 @@
+.login-container.redeem { width: 400px; margin-left: -230px; top: 50%; margin-top: -300px;}
+.login-container.redeem .form_row {margin-bottom: 0;}
+.login-container.redeem .form_row label.field_name { float: none; width: auto;}
+.login-container.redeem .form_row .field { margin-left: 0;}
+.login-container.redeem .form_row .field input, .login-container.redeem .form_row .field select { width: 100%;}
+
+
+.login-container.register {
+	padding: 0;width: 700px; margin-left: -380px; top: 50%; margin-top: -300px;
+}
+.login-container.register .widgets_area { padding: 0;}
+.login-container.register .widgets_area .row-fluid .span6 {
+	width: 100%;
+}

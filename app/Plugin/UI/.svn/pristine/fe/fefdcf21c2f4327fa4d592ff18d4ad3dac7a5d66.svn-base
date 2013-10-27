@@ -1,0 +1,88 @@
+<?
+$fields = $this->Entity->entityFields($model);
+$entity = $this->Entity->getModel($model);
+$id = $this->Entity->fieldValue("id");
+
+$formClass = "form has_many " . Inflector::underscore($model) . " " . ( $id ? "id-$id" : "" ) . " mode-$mode contextLinksInside";
+
+$url = array(
+	"controller" => Inflector::underscore(Inflector::pluralize($model)),
+	"action" => "form",
+	"mode" => $mode,
+	"template" => "has_many",
+	"modelScope" => $this->Entity->getModelScope(),
+	"basePath" => $this->Entity->currentPathField()
+);
+if ($id) $url[] = $id;
+
+?>
+<div class="<?= $formClass ?>" data-url="<?= Router::url($url) ?>" <? if ($id) { ?>data-id="<?= $id ?>"<? } ?> data-entitypath="<?= $this->Entity->currentPathField() ?>">
+	<div class="contextLinks">
+		<?= $this->Html->link(
+			$this->Html->image("action-cancel.png"),
+			"javascript:void(0)",
+			array(
+				"onclick" => "$(this).closest('.form').find('.fields > .ajaxDelete').val('1'); $(this).closest('.form').addClass('deleted');",
+				"escape" => false
+			)
+		) ?>
+		<?= $this->Html->link(
+			$this->Html->image("action-undo.png"),
+			"javascript:void(0)",
+			array(
+				"onclick" => "undoChanges($(this).closest('.form'));",
+				"escape" => false
+			)
+		) ?>
+		<?= $this->Html->link(
+			$this->Html->image("action-edit.png"),
+			"javascript:void(0)",
+			array(
+				"onclick" => "$(this).closest('.form').addClass('editing');",
+				"escape" => false
+			)
+		) ?>
+	</div>
+	
+	<div class="fields">
+		<?
+		foreach ($fields as $key => $type) {
+			if (substr($key, -3) != "_id" && ($key != "id" || $id) && ($key != "created") && ($key != "modified") && ($key != "Class")) {
+				print $this->Entity->field($key, $mode);
+			}
+		}
+		
+		if (array_key_exists("Class", $fields)) {
+			// get the parent associated class based on parentPathClass
+			$parentClass = $this->Entity->parentPathClass();
+			
+			print $this->Entity->field("Class", 'default', array("value" => $parentClass, "type" => "hidden"));
+			
+			if ($this->Entity->fieldValue("object_id")) {
+				print $this->Entity->field("object_id", "default", array("type" => "hidden"));
+			}
+		}
+		
+		print $this->Entity->field("__ajax_deleted", "default", array("type" => "hidden", "class" => "ajaxDelete"));
+		?>
+	</div>
+	
+	<div class="editLinks">
+		<?= $this->Html->link(
+			$this->Html->image("action-cancel.png"),
+			"javascript:void(0)",
+			array(
+				"onclick" => "undoChanges($(this).closest('.form'));",
+				"escape" => false
+			)
+		) ?>
+		<?= $this->Html->link(
+			$this->Html->image("action-check.png"),
+			"javascript:void(0)",
+			array(
+				"onclick" => "acceptChanges($(this).closest('.form'));",
+				"escape" => false
+			)
+		) ?>
+	</div>
+</div>

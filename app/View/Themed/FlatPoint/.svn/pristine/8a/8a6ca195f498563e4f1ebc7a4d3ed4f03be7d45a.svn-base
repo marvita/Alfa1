@@ -1,0 +1,43 @@
+.ui-autocomplete { z-index: 1000;}
+.ajax-breadcrumb {display: none;}
+/*header {display: none;}
+#main_navigation {display: none;}*/
+.popup .widgets_area { padding: 0; text-align: left;
+border-top: 1px solid #5db2ff;
+border-left: 1px solid #5db2ff;
+border-right: 1px solid #5db2ff;
+border-bottom: 1px solid #5db2ff;
+padding-bottom: 10px;}
+
+.ui-dialog .ui-dialog-titlebar {display: none;}
+
+.popup .widgets_area .row-fluid .span6 { width: 100%;}
+
+.ui-dialog, .ui-dialog .ui-dialog-content { padding: 0; }
+
+.well.light_blue .well-content  {border: 0; padding-bottom: 0;}
+
+div.submit input[type=submit] {
+	display: inline-block;
+	padding: 5px 10px;
+	margin-bottom: 0;
+	font-size: 12px;
+	line-height: 20px;
+	color: #333;
+	text-align: center;
+	vertical-align: middle;
+	cursor: pointer;
+	background-color: #e5e5e5;
+	background-repeat: repeat-x;
+	border: none !important;
+	outline: none !important;
+}
+
+.associations { margin-top: 15px;}
+
+.ui-widget .input-append input, 
+.ui-widget .input-append select, 
+.ui-widget .input-append textarea, 
+.ui-widget .input-append button {
+	font-size: 12px;
+}

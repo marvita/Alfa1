@@ -1,0 +1,119 @@
+<?
+$this->extend("/form-wrapper");
+
+$fields = $this->Entity->entityFields($model);
+$entity = $this->Entity->getModel($model);
+$config = $this->Entity->entityConfig($model, 'Associations');
+$fieldConfigs = $this->Entity->entityConfig($model, 'HideFields');
+
+$id = $this->Entity->fieldValue("id");
+
+$url = array(
+	"controller" => Inflector::underscore(Inflector::pluralize($model)),
+	"action" => "form",
+	"mode" => $mode,
+	"template" => "has_and_belongs_to_many",
+	"modelScope" => $this->Entity->getModelScope(),
+	"basePath" => $this->Entity->currentPathField()
+);
+if ($id) $url[] = $id;
+
+foreach (array("belongsTo", "hasMany", "hasAndBelongsToMany", "hasOne") as $assoc) {
+	?>
+	<div class="<?= Inflector::underscore($assoc)?>">
+		<?
+		foreach ($entity->$assoc as $key => $values) {
+			if ( isset($config[$key]['show']) && (( is_array($config[$key]['show']) && in_array('form-has_and_belongs_to_many', $config[$key]['show'])) || ($config[$key]['show'] == 'form-has_and_belongs_to_many') ) ) {
+				if ($assoc != "hasOne") {
+					print $this->Entity->$assoc($key, "", array("model" => $model));
+				} else {
+					$assocMode = isset($config[$key]["mode"]) ? $config[$key]["mode"] : "default";
+					print $this->Entity->form($key, "has_many", $assocMode);
+				}
+			}
+		}
+		?>
+	</div>
+	<?
+}
+
+
+$this->assign("mode", $mode);
+
+if (isset($form_open)) $this->assign("form_open", $form_open);
+if (isset($form_submit)) $this->assign("form_submit", $form_submit);
+
+$formClass = "has_and_belongs_to_many " . ( $id ? "id-$id" : "" ) . " contextLinksInside";
+$this->assign("containerClass", $formClass);
+
+$this->assign('contextLinks', '');
+$this->start('contextLinks');
+	echo $this->Html->link(
+		$this->Html->image("UI.action-cancel.png"),
+		"javascript:void(0)",
+		array(
+			"onclick" => "$(this).closest('.form').find('.fields > .ajaxDelete').val('1'); $(this).closest('.form').addClass('deleted');",
+			"escape" => false
+		)
+	);
+	echo $this->Html->link(
+		$this->Html->image("UI.action-undo.png"),
+		"javascript:void(0)",
+		array(
+			"onclick" => "undoChanges($(this).closest('.form'));",
+			"escape" => false
+		)
+	);
+	echo $this->Html->link(
+		$this->Html->image("UI.action-edit.png"),
+		"javascript:void(0)",
+		array(
+			"onclick" => "$(this).closest('.form').addClass('editing');",
+			"escape" => false
+		)
+	);
+$this->end();
+
+
+$this->assign('fields', '');
+$this->start('fields');
+	foreach ($fields as $key => $type) {
+		if (substr($key, -3) != "_id" && ($key != "id" || $this->Entity->fieldValue("id")) && ($key != "created") && ($key != "modified") && ($key != "Class")) {
+			print $this->Entity->field($key, $mode);
+		}
+	}
+	
+	if (array_key_exists("Class", $fields)) {
+		// get the parent associated class based on parentPathClass
+		$parentClass = $this->Entity->parentPathClass();
+		
+		print $this->Entity->field("Class", 'default', array("value" => $parentClass, "type" => "hidden"));
+		
+		if ($this->Entity->fieldValue("object_id")) {
+			print $this->Entity->field("object_id", "default", array("type" => "hidden"));
+		}
+	}
+	
+	print $this->Entity->field("__ajax_deleted", "default", array("type" => "hidden", "class" => "ajaxDelete"));
+$this->end();
+
+
+$this->assign('editLinks', '');
+$this->start('editLinks');
+	echo $this->Html->link(
+		$this->Html->image("UI.action-cancel.png"),
+		"javascript:void(0)",
+		array(
+			"onclick" => "undoChanges($(this).closest('.form'));",
+			"escape" => false
+		)
+	);
+	echo $this->Html->link(
+		$this->Html->image("UI.action-check.png"),
+		"javascript:void(0)",
+		array(
+			"onclick" => "acceptChanges($(this).closest('.form'));",
+			"escape" => false
+		)
+	);
+$this->end(); ?>

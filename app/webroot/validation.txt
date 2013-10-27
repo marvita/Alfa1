@@ -1,0 +1,120 @@
+Array
+(
+)
+afterValidate PatientFile
+Array
+(
+    [CausaFallecimiento] => Array
+        (
+            [0] => Alphabets and numbers only
+        )
+
+)
+afterValidate SmokingHistory
+Array
+(
+)
+afterValidate AatDetermination
+Array
+(
+)
+afterValidate ClinicalHistory
+Array
+(
+)
+afterValidate OtherDiagnostic
+Array
+(
+)
+afterValidate ChestTac
+Array
+(
+)
+afterValidate CurrentTreatment
+Array
+(
+)
+afterValidate SustitutiveTreatment
+Array
+(
+)
+afterValidate PulmonaryStudy
+Array
+(
+)
+afterValidate HepaticEnzyme
+Array
+(
+)
+afterValidate StGeorgeCuestionnaire
+Array
+(
+)
+afterValidate WorkingHistory
+Array
+(
+)
+afterValidate BloodSample
+Array
+(
+)
+afterValidate FinalDate
+Array
+(
+)
+afterValidate PatientFile
+Array
+(
+)
+afterValidate SmokingHistory
+Array
+(
+)
+afterValidate AatDetermination
+Array
+(
+)
+afterValidate ClinicalHistory
+Array
+(
+)
+afterValidate OtherDiagnostic
+Array
+(
+)
+afterValidate ChestTac
+Array
+(
+)
+afterValidate CurrentTreatment
+Array
+(
+)
+afterValidate SustitutiveTreatment
+Array
+(
+)
+afterValidate PulmonaryStudy
+Array
+(
+)
+afterValidate HepaticEnzyme
+Array
+(
+)
+afterValidate StGeorgeCuestionnaire
+Array
+(
+)
+afterValidate WorkingHistory
+Array
+(
+)
+afterValidate BloodSample
+Array
+(
+)
+afterValidate FinalDate
+Array
+(
+)

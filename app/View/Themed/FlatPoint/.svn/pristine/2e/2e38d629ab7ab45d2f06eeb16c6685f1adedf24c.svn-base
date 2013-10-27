@@ -1,0 +1,33 @@
+<?php
+
+$enumopts = $this->Entity->enumOpts($field);
+
+$func = "{$field}TypesArray";
+$opts = Assets::$func();
+if (empty($opts)) $opts = array_combine($enumopts, $enumopts);
+if (!isset($options["empty"])) {
+	$empty = __("Seleccione")."...";
+} else {
+	$empty = $options["empty"];
+}
+
+$options = array_merge($options, array("options" => $opts, "empty" => $empty ));
+
+
+// adapt the field name on the entity path setting
+$path = $this->Entity->currentPathField();
+$fieldLabel = $this->Entity->fieldLabel($field);
+$field = $path . ($path ? "." : "") . $field;
+
+$options["div"] = false;
+$options["label"] = false;
+$options["class"] = "span12";
+//$options["placeholder"] = $fieldValue;
+
+?>
+<div class="form_row">
+	<label class="field_name"><?= $fieldLabel ?></label>
+	<div class="field">
+		<? echo $this->Form->input($field, $options); ?>
+	</div>
+</div>

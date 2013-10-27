@@ -1,0 +1,213 @@
+<?php
+
+App::uses('Component', 'Controller');
+App::uses('Product', 'Model');
+
+/**
+ * Price Component.
+ *
+ * Wrapper for the price library functions
+ *
+ * @package       Cake.Controller.Component
+ * @link http://book.cakephp.org/2.0/en/core-libraries/components/cookie.html
+ *
+ */
+class FilterComponent extends Component {
+	public function initialize($controller) {
+		parent::initialize($controller);
+		
+		$this->Product = $controller->Product;
+		
+		$this->controller = $controller;
+	}
+	
+	public function conditions($attributeId = null) {
+		$filter = CakeSession::read("Filter");
+		//pr($filter);
+		if (empty($filter)) return false;
+		$conditions = array("AND" => array());
+		
+		foreach ( $filter as $aid => $values) {
+			if (!$attributeId || $aid != $attributeId) {
+				$subconds = array("OR" => array());
+				foreach ($values as $avid => $status) {
+					if ($status){
+						$subconds["OR"][] = "GROUP_CONCAT(DISTINCT AttributeValuesProduct.attribute_value_id) LIKE '%{$avid}%'";
+						$subconds["OR"][] = "GROUP_CONCAT(DISTINCT AttributeValuesOption.attribute_value_id) LIKE '%{$avid}%'";
+					}
+				}
+				
+				//pr($subconds);
+				if (!empty($subconds["OR"]))
+					$conditions["AND"][] = " ( " . implode(" OR ", $subconds["OR"]) . " ) ";
+			}
+		}
+		
+		//pr($conditions);
+		
+		if (empty($conditions["AND"])) return false;
+		
+		$condstr = " ( " . implode(" AND ", $conditions["AND"]) . " ) ";
+		
+		//pr ("_{$condstr}_");
+		
+		return $condstr;
+	}
+	
+	public function activeFilters($category = null, $extraconds = array(), $extrajoins = array()) {
+		
+		if ($category) {
+			// get all categories and subcategories
+			$cats = $this->Product->Category->children($category);
+		
+			// get the category and subcategories
+			$categories = Set::extract($cats, "/Category/id");
+			$categories[] = $category;
+			//$categories = explode(",", $categories);
+			$conds = array("CategoriesProduct.category_id" => $categories);
+		} else $conds = array();
+		
+		// rendering the full category view just shows the attribute filters, for that we need just the attributes
+		$this->Product->AttributesProduct->Attribute->contain(array());
+		$attributes = $this->Product->AttributesProduct->Attribute->find('all');
+		
+		$this->controller->set("attributes", $attributes);
+		
+		if (isset($this->controller->request->query["status"]) ) {
+			// if we're rendering the ajax view result of clicking a filter, we need the filter values that remain visible
+			$this->Product->CategoriesProduct->contain(array());
+			
+			$joins = array(
+				array(
+					"table" => "attribute_values_products",
+					"alias" => "AttributeValuesProduct",
+					"type" => "LEFT",
+					"conditions" => array(
+						"AttributeValuesProduct.product_id = CategoriesProduct.product_id"
+					)
+				),
+				array(
+					"table" => "attribute_values",
+					"alias" => "AttributeValue",
+					"type" => "LEFT",
+					"conditions" => array(
+						"AttributeValuesProduct.attribute_value_id = AttributeValue.id"
+					)
+				),
+				array(
+					"table" => "options",
+					"alias" => "Option",
+					"type" => "LEFT",
+					"conditions" => array(
+						"Option.product_id = CategoriesProduct.product_id"
+					)
+				),
+				array(
+					"table" => "attribute_values_options",
+					"alias" => "AttributeValuesOption",
+					"type" => "LEFT",
+					"conditions" => array(
+						"AttributeValuesOption.option_id = Option.id"
+					)
+				),
+				array(
+					"table" => "attribute_values",
+					"alias" => "OptAttributeValue",
+					"type" => "LEFT",
+					"conditions" => array(
+						"AttributeValuesOption.attribute_value_id = OptAttributeValue.id"
+					)
+				)
+			);
+			
+			$joinsProduct = array(
+				array(
+					"table" => "attribute_values_products",
+					"alias" => "AttributeValuesProductConstraint",
+					"type" => "LEFT",
+					"conditions" => array(
+						"AttributeValuesProductConstraint.product_id = CategoriesProduct.product_id"
+					)
+				),
+				array(
+					"table" => "attribute_values",
+					"alias" => "AttributeValueConstraint",
+					"type" => "LEFT",
+					"conditions" => array(
+						"AttributeValuesProductConstraint.attribute_value_id = AttributeValueConstraint.id"
+					)
+				)
+			);
+			
+			$joinsOption = array(
+				array(
+					"table" => "attribute_values_options",
+					"alias" => "AttributeValuesOptionConstraint",
+					"type" => "LEFT",
+					"conditions" => array(
+						"AttributeValuesOptionConstraint.option_id = Option.id"
+					)
+				),
+				array(
+					"table" => "attribute_values",
+					"alias" => "AttributeValueConstraint",
+					"type" => "LEFT",
+					"conditions" => array(
+						"AttributeValuesOptionConstraint.attribute_value_id = AttributeValueConstraint.id"
+					)
+				)
+			);
+		
+			$values = array();
+			
+			foreach ($attributes as $attribute) {
+				$attrid = $attribute["Attribute"]["id"];
+				
+				$attrConds = $conds + array("AttributeValueConstraint.attribute_id" => $attrid);
+				//pr ($attrConds);
+				
+				// first find the active values based on available products
+				$having = $this->conditions($attrid);
+				//pr ("having:".$having);
+				$group = "AttributeValuesProductConstraint.attribute_value_id ". ($having ? " HAVING $having" : "");
+				//pr ("group:".$group);
+				//pr(array_merge($joins, $joinsProduct));
+				$attrValuesProduct = $this->Product->CategoriesProduct->find('all', array(
+					"fields" => array("DISTINCT AttributeValuesProductConstraint.attribute_value_id"),
+					"conditions" => $attrConds,
+					"joins" => array_merge($joins, $joinsProduct),
+					"group" => $group,
+				));
+				
+				//pr ($attrValuesProduct);
+				
+				// second find the active values based on available products
+				$group = "AttributeValuesOptionConstraint.attribute_value_id ". ($having ? " HAVING $having" : "");
+				
+				$attrValuesOption = $this->Product->CategoriesProduct->find('all', array(
+					"fields" => array("DISTINCT AttributeValuesOptionConstraint.attribute_value_id"),
+					"conditions" => $attrConds,
+					"joins" => array_merge($joins, $joinsOption),
+					"group" => $group,
+				));
+				
+				//pr($attrValuesProduct);
+				//pr (Set::extract("{n}.AttributeValuesProductConstraint.attribute_value_id", $attrValuesProduct));
+				//foreach($attrValuesProduct as $val) {
+					$valuesSet = Set::extract("{n}.AttributeValuesProductConstraint.attribute_value_id", $attrValuesProduct);
+					if ($valuesSet) $values = array_merge($values, $valuesSet);
+				//}
+				//pr($attrValuesOption);
+				//pr (Set::extract("{n}.AttributeValuesOptionConstraint.attribute_value_id", $attrValuesOption));
+				//foreach($attrValuesOption as $val) {
+					$valuesSet = Set::extract("{n}.AttributeValuesOptionConstraint.attribute_value_id", $attrValuesOption);
+					if ($valuesSet) $values = array_merge($values, $valuesSet);
+				//}
+			}
+			
+			//pr($values);
+			$this->controller->set("attrValues", $values);
+			
+		}
+	}
+}

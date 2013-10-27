@@ -1,0 +1,28 @@
+<?php
+$context = substr($this->Js->currentContext(), 1);
+
+$basePath = $this->Entity->currentPathField();
+if ($basePath != "") $basePath .= ".";
+$basePath .= $alias;
+
+$url = Router::url(array('controller' => $controller, 'action' => 'autocomplete', 'type' => 'json', 'plugin' => $plugin ? $plugin : false));
+$viewAction = Router::url(array('controller' => $controller, 'action' => 'form', 'mode' => $mode, 'modelScope' => Entity::getModelScope(), 'basePath' => $basePath, 'plugin' => $plugin ? $plugin : false));
+?>
+<input type="text" id="autocomplete-<?= $context ?>" name="autocomplete-<?= $context ?>">
+
+<script type="text/javascript">
+$(document).ready(function() {
+	$('#autocomplete-<?= $context ?>').autocomplete({
+		delay: 800,
+		minLength: 3,
+		source: '<?= $url ?>',
+		select: function(event, ui) {
+			//console.log($(this).val());
+			$('#<?= $valueFieldID ?>').val(ui.item.value);
+			$(this).val(ui.item.label);
+			fillEntityFromID('<?= $viewAction ?>/'+ui.item.value, '<?= $this->Entity->currentPathID() ?>', '<?= $association ?>', '<?= $alias ?>');
+			return false;
+		}
+	});
+});
+</script>

@@ -1,0 +1,81 @@
+.dark_grey {
+  height: 90px !important;
+  background-color: #C90016 !important;
+  background-image:url("/alfa1/img/logo_alfa1argentina.png") !important;
+  background-repeat: no-repeat !important;
+  background-position: left top !important;
+  
+}
+
+#main_navigation {
+  top: 88px !important;
+  border-top: 16px solid #00579E !important;
+}
+
+.inner_content {
+  border-top: 26px solid #00579E !important;
+}
+
+.form_row.inline_block, .form_row.field_type_boolean, .form_row.field_type_date, .form_row.field_type_datetime {
+	display: inline-block; clear: none; margin-right: 30px;width: auto; white-space: nowrap;
+}
+
+.form_row.inline_block label, .form_row.field_type_boolean label, .form_row.field_type_date label, .form_row.field_type_datetime label {
+	width: auto; margin-right: 5px; float: none;
+}
+
+.form_row.inline_block .field, .form_row.field_type_boolean .field, .form_row.field_type_date .field, .form_row.field_type_datetime .field {
+	margin-left: 0; display: inline-block;
+}
+
+.form_row.small .field {
+	width: 120px;
+}
+.form_row.field_type_boolean .field {
+	width: 20px;
+}
+.form_row.field_type_date .field {
+	width: 80px;
+}
+.form_row.field_type_datetime .field {
+	width: 120px;
+}
+.form_row.field_type_date.inline_block .field {
+	margin-bottom: -11px;
+}
+
+.form_row { margin-bottom: 5px;}
+
+.belongs_to.patient.base-patient_file .field_fecha_nacimiento,
+.belongs_to.patient.base-patient_file .field_patient-genero,
+.belongs_to.patient.base-patient_file .field_altura,
+.belongs_to.patient.base-patient_file .field_patient-unidad_altura,
+.belongs_to.patient.base-patient_file .field_peso,
+.belongs_to.patient.base-patient_file .field_consentimiento_firmado {
+	display: none;
+}
+
+
+.contextLinks, .editLinks {
+	display: none;
+}
+
+.nav-tabs > .active > a, .nav-tabs > .active > a:hover, .nav-tabs > .active > a:focus,
+.nav-tabs > li > a:hover, .nav-tabs > li > a:focus {border-bottom: 0;}
+div.submit { padding: 10px;}
+.popup > .widgets_area > .row-fluid > div >div.well {
+	margin-bottom: 0;
+}
+#PatientFileFormForm .navbar-inner .nav-tabs {
+	margin-left: 5px;
+}
+#PatientFileFormForm .navbar-inner .nav-tabs li {
+	width: 124px;
+	text-align: center;
+}
+#PatientFileFormForm .navbar-inner .nav-tabs li.AatDetermination {
+	width: 150px;
+}
+#PatientFileFormForm .navbar-inner .nav-tabs li.StGeorgeCuestionnaire {
+	width: 149px;
+}

@@ -1,0 +1,200 @@
+<?
+App::uses('HtmlHelper', 'View/Helper');
+
+class UIHtmlHelper extends HtmlHelper {
+	public $helpers = array('Form' => array('className' => 'UI.UIForm'), 'Js' => array('className' => 'UI.UIJs'), "Paginator");
+	
+	public function clearFixField() {
+		return array("div", array("clearfix", " "));
+	}
+	
+	public function objectTableHeaders($fields, $trOptions = null, $thOptions = null) {
+		$form = "";
+		$configs = array();
+		$types = array();
+		$headers = array();
+		
+		foreach ($fields as $field) {
+			$class = null;
+			$id = null;
+			if (is_array($field) ) {
+				if (in_array($field[0], array("media", "div", "link", "tag", "para"))) {
+					$headers[] = call_user_func_array(array($this->Html, $field[0]), $field[1]);
+					continue;
+				}
+				
+				if (isset($field[2])) {
+					$id = $field[2];
+				}
+				
+				if (isset($field[1])) {
+					$class = $field[1];
+				}
+				
+				$field = $field[0];
+			}
+			
+			if (strstr($field, ".")) {
+				list ($model, $key) = explode(".", $field);
+			} else {
+				$model = Inflector::camelize(Inflector::singularize($this->request->params["controller"]));
+				$key = $field;
+			}
+			
+			App::uses($model, "Model");
+			
+			if (!isset($types[$model])) {
+				$obj = new $model;
+				$types[$model] = $obj->getColumnTypes();
+			}
+			
+			// if field is not defined in db, and it's not a defined html helper func, then just print whatever it is the key
+			if (!isset($types[$model][$key])) {
+				$obj = new $model;
+				if (!$obj->isVirtualField($key)) {
+					if ($class) $headers[] = array($key => array("class" => $class)); else $headers[] = $key;
+					continue;
+				}
+			}
+			
+			if (!isset($configs[$model])) {
+				try {
+					Configure::load($model, "objects");
+					$configs[$model] = Configure::read("$model.Fields");
+				} catch (Exception $e) {
+					$configs[$model] = array();
+				}
+				
+			}
+			
+			if (!isset($configs[$model][$key])) {
+				$value = $key;
+			} else {
+				$value = $configs[$model][$key];
+			}
+			
+			unset($label);			
+			
+			if (is_array($value)) {
+				// get properties from array
+				extract($value);
+				if (isset($shortLabel)) $label = $shortLabel;
+			} else {
+				$label = $value;
+				unset($preprint);
+				unset($break);
+			}
+			
+			if (!isset($label)) $label = $key;
+			if ($class) $headers[] = array($this->Paginator->sort("$model.$key", $label) => array("class" => $class)); else $headers[] = $this->Paginator->sort("$model.$key", $label);
+			
+		}
+		
+		return $this->tableHeaders($headers, $trOptions, $thOptions);
+	}
+	
+	public function objectTableRow($fields, $data) {
+		$form = "";
+		$configs = array();
+		$types = array();
+		$cols = array();
+		
+		foreach ($fields as $field) {
+			$class = null;
+			$id = null;
+			if (is_array($field) ) {
+				if (in_array($field[0], array("media", "div", "link", "tag", "para"))) {
+					$cols[] = call_user_func_array(array($this->Html, $field[0]), $field[1]);
+					continue;
+				}
+				
+				if (isset($field[2])) {
+					$id = $field[2];
+				}
+				
+				if (isset($field[1])) {
+					$class = $field[1];
+				}
+				
+				$field = $field[0];
+			}
+			
+			if (!preg_match('/^[a-z]+[a-z0-9]*\.[a-z0-9_]+$/i', $field) && !preg_match('/^[a-z_]+[a-z0-9_]*$/i', $field)) {
+				if ($class) $cols[] = array($field => array("class" => $class)); else $cols[] = $field;
+				continue;
+			}
+			if (strstr($field, ".")) {
+				list ($model, $key) = explode(".", $field);
+			} else {
+				$model = Inflector::camelize(Inflector::singularize($this->request->params["controller"]));
+				$key = $field;
+			}
+			
+			App::uses($model, "Model");
+			
+			if (class_exists($model)) {
+				if (!isset($types[$model])) {
+					$obj = new $model;
+					$types[$model] = $obj->getColumnTypes();
+				}
+			} else {
+				$cols[] = $key;
+				continue;
+			}
+			
+			// if field is not defined in db, and it's not a defined html helper func, then just print whatever it is the key
+			if (!isset($types[$model][$key]) ) {
+				$obj = new $model;
+				if (!$obj->isVirtualField($key)) {
+					if ($class) $cols[] = array($key => array("class" => $class)); else $cols[] = $key;
+					continue;
+				}
+			}
+			
+			if (!isset($configs[$model])) {
+				try {
+					Configure::load($model, "objects");
+					$configs[$model] = Configure::read("$model.Fields");
+				} catch (Exception $e) {
+					$configs[$model] = array();
+				}
+				
+			}
+			
+			if (!isset($configs[$model][$key])) {
+				$conf = $key;
+			} else {
+				$conf = $configs[$model][$key];
+			}
+			
+			$value = isset($data[$model]) ? $data[$model][$key] : $data[$key];
+			
+			if (is_array($conf) && isset($conf["printFunc"])) {
+				$value = call_user_func($conf["printFunc"], $value);
+			}
+			
+			if (is_array($conf)) {
+				// get properties from array
+				extract($conf);
+			}
+			
+			if ($id) {
+				$cols[] = array($value, array("class" => $class, "id" => $id));
+			} elseif ($class) $cols[] = array($value, array("class" => $class));
+				else $cols[] = $value;
+			
+		}
+		
+		return $cols;
+	}
+	
+	public function css($path, $rel = null, $options = array()) {
+		if (is_array($options) && !isset($options["inline"])) $options["inline"] = false;
+		parent::css($path, $rel, $options);
+	}
+	
+	public function script($path, $options = array()) {
+		if (is_array($options) && !isset($options["inline"])) $options["inline"] = false;
+		parent::script($path, $options);
+	}
+}

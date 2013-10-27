@@ -1,0 +1,87 @@
+<?php
+
+App::uses('ThemeView', 'View');
+
+class UIView extends ThemeView {
+	/**
+ * Returns filename of given action's template file (.ctp) as a string.
+ * CamelCased action names will be under_scored! This means that you can have
+ * LongActionNames that refer to long_action_names.ctp views.
+ * It also searches in Common/Controller/action.ctp, Common/action.ctp and finally in UI/View/Common/action.ctp
+ * 
+ * @param string $name Controller action to find template filename for
+ * @return string Template filename
+ * @throws MissingViewException when a view file could not be found.
+ */
+	protected function _getViewFileName($name = null) {
+		try {
+			$path = parent::_getViewFileName($name);
+			return $path;
+		} catch ( MissingViewException $e ) {
+			$viewPaths = array(
+				"Common" . DS . $this->viewPath . DS,
+				"Common" . DS );
+			
+			if ($name === null) {
+				$name = $this->view;
+			}
+			$name = str_replace('/', DS, $name);
+			
+			list($plugin, $name) = $this->pluginSplit($name);
+			
+			$paths = array_merge(App::path('View'), App::path('View', 'UI'));
+			
+			if ($plugin) {
+				$paths = array_merge($paths, App::path('View', $plugin));
+			}
+			
+			if (!empty($this->theme)) {
+				$themePaths = array();
+				foreach ($paths as $path) {
+					if (strpos($path, DS . 'Plugin' . DS) === false) {
+						$themePaths[] = $path . 'Themed' . DS . $this->theme . DS;
+					}
+				}
+				$paths = array_merge($themePaths, $paths);
+			}
+			
+			$searchedPaths = array();
+			foreach($paths as $path) {
+				foreach ($viewPaths as $spath) {
+					$searchedPaths[] = $path . $spath . $name . ".ctp";
+					if (file_exists($path . $spath . $name . ".ctp")) {
+						return $path . $spath . $name . ".ctp";
+					}
+				}
+			}
+			
+			throw new MissingViewException(array('file' => implode(", ", $searchedPaths) ));
+		}
+		
+	}
+
+	public function element($name, $data = array(), $options = array()) {
+		// store ignoreMissing because we need to check it after testing for various locations
+		// so cake does not trigger several errors for one element
+		$ignoreMissing = !empty($options["ignoreMissing"]);
+		$options["ignoreMissing"] = true;
+
+		$render = parent::element($name, $data, $options);
+		
+		if ($render === null) {
+			$options["plugin"] = "UI";
+			$render = parent::element($name, $data, $options);
+			
+			if ($render === null && !$ignoreMissing) {
+				list ($plugin, $name) = pluginSplit($name, true);
+				$name = str_replace('/', DS, $name);
+				$file = $plugin . 'Elements' . DS . $name . $this->ext;
+				trigger_error(__d('cake_dev', 'Element Not Found: %s', $file), E_USER_NOTICE);
+			}
+		}
+
+		return $render;
+	}
+}
+
+?>

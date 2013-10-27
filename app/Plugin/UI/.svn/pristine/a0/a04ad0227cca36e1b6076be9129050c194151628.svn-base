@@ -1,0 +1,172 @@
+<?
+App::uses('JsHelper', 'View/Helper');
+
+class DinamoJsHelper extends JsHelper {
+	public $helpers = array('Html', 'Form', 'Js', 'UserMgmt.UserAuth','Menu');
+	
+	public function currentContext() {
+		$context = $this->_View->getVar("context");
+				
+		//pr($this->_View->getVars());
+		if ($context) {
+			return substr($context, strrpos($context, ";")+1);
+		} else {
+			return "#content";
+		}
+	}
+	
+	public function parentContext() {
+		$context = $this->_View->getVar("context");
+				
+		//pr($this->_View->getVars());
+		if ($context) {
+			$context = substr($context, 0, strrpos($context, ";"));
+			return substr($context, strrpos($context, ";")+1);
+		} else {
+			return "#content";
+		}
+	}
+	
+	public function popup($title, $url = null, $options = array()) {
+		$contextId = "context-id-".rand(100000000,999999999);
+		$context = $this->_View->getVar("context").";.$contextId";
+		$url["context"] = $context;
+		
+		//$options["update"] = ".popup.$contextId";
+		$options["before"] = "if(\$('.popup').length == 0) { $('.ajaxloading').dialog({modal: true}); }  $('.ajaxloading').after('<div class=\\'popup $contextId\\'></div>');";
+		
+		// ok option allows to disable or change the text of the popup ok button
+		if (isset($options["ok"]) && $options["ok"] ) {
+			$okText = __("Aceptar");
+			if (is_string($options["ok"])) {
+				$okText = $options["ok"];
+			}
+			// TODO(3): escape the oktext for javascript inclusion
+			$buttons = "buttons:[{text: '$okText',click: function(){\$(this).dialog('close');}}],";
+		} else {
+			$buttons = "";
+		}
+		
+		// width option allows to change the default width of the popup dialog
+		if (isset($options["width"]) && is_numeric( $options["width"] )) {
+			$width = intval($options["width"]);
+			$widthText = "width: $width,";
+		} else {
+			$widthText = "";
+		}
+		
+		// class options adds classes to the popup window (and removes them after close)
+		if (isset($options["dialogclass"]) && is_numeric( $options["dialogclass"] )) {
+			$classTextPre = "$('.popup.$contextId').addClass('{$options["dialogclass"]}');";
+			$classTextPost = "$('.popup.$contextId').removeClass('{$options["dialogclass"]}');";
+		} else {
+			$classTextPre = "";
+			$classTextPost = "";
+		}
+		
+		unset($options["width"]);
+		unset($options["dialogclass"]);
+		
+		$options["complete"] = "$classTextPre \$('.popup.$contextId').dialog({{$buttons} {$widthText} focus: function(event, ui) { \$('.popup').parent().removeClass('ui-focus'); \$(this).parent().addClass('ui-focus'); },close: function() { $classTextPost \$('.popup.$contextId').remove(); if($('.popup').length == 0) { \$('.ajaxloading').dialog('close'); } }}); return false;"; 
+		return $this->Js->link($title, $url , $options );
+	}
+	
+	public function link($title, $url = null, $options = array()) {
+		if (!$this->Menu->hasAccess($url)) return "";
+		if (is_array($url) && !isset($url["context"])) {
+			$url["context"] = $this->_View->getVar("context");
+		}
+		if (!isset($options["update"])) {
+			$options["update"] = substr($url["context"], strrpos($url["context"], ";")+1);
+		}
+		if (!isset($options["before"])) {
+			$options["before"] = "; if(\$('.popup').length == 0) { $('.ajaxloading').dialog({modal: true}); } ";
+		}
+		if (!isset($options["complete"])) {
+			$options["complete"] = "";
+		}
+		$options["complete"] .= "; if(\$('.popup').length == 0) { \$('.ajaxloading').dialog('close'); } ";
+		
+		if (isset($options["return"])) {
+			if ($options["return"]) {
+				$options["complete"] .= "return true;";
+			} else {
+				$options["complete"] .= "return false";
+			}
+		}
+		
+		if (is_array($url) && isset($url["?"])) {
+			$url["?"] = str_replace("&amp;", "&", http_build_query($url["?"]));
+		}
+		
+		return parent::link($title, $url , $options );
+		
+	}
+	
+	public function submit($title, $options = array()) {
+		if (!isset($options["update"])) {
+			$context = $this->_View->getVar("context");
+			
+			//pr($this->_View->getVars());
+			if ($context) {
+				$curcontext = substr($context, strrpos($context, ";")+1);
+				
+				// ajax submits should update parent of current context in case of success, and current context in case of error
+				$previouscontext = substr($context, 0, strrpos($context, ";"));
+				$parentcontext = substr($previouscontext, strrpos($previouscontext, ";") + 1);
+				
+				if ($parentcontext != "") {
+					
+					$update = $curcontext;
+					$options["url"]["submitSuccessContext"] = $previouscontext;
+					$options["url"]["submitErrorContext"] = $context;
+				} else {
+					$options["url"]["submitErrorContext"] = $options["url"]["submitSuccessContext"] = $update = "#content";
+				}
+				
+				$options["update"] = $update;
+			}
+		} else {
+			$context = $this->_View->getVar("context");
+			
+			$options["url"]["context"] = $context;
+			//pr($this->_View->getVars());
+			if ($context) {
+				$curcontext = substr($context, strrpos($context, ";")+1);
+			}
+		}
+		
+		if (!isset($options["before"])) {
+			$options["before"] = "";
+		}
+		$options["before"] .= "; if(\$('.popup').length == 0) { \$('.ajaxloading').dialog({modal: true}); } ";
+		
+		if (!isset($options["complete"])) {
+			$options["complete"] = "";
+		}
+		
+		if (!isset($update)) {	
+			$options["complete"] .= "; \$('.popup$curcontext').remove(); if ( \$('.popup').length == 0) { \$('.ajaxloading').dialog('close'); }";
+		} else {
+			// implement updating parent or same in case of error copying html data
+			$options["complete"] .= "; if (!validationError) { \$('$parentcontext > *').remove(); \$('.popup$curcontext > *').appendTo('$parentcontext'); \$('.popup$curcontext').remove(); if ( \$('.popup').length == 0) { \$('.ajaxloading').dialog('close'); } }";
+		}
+		
+		//$options["success"] = "alert('success ' + validationError); if (validationError) { $('$curcontext').html(data); } else { $('$update').html(data); }; return;";
+		return parent::submit($title, $options );
+	}
+	
+	public function contextElement($element, $values = array(), $tag = "div", $class="context", $id = "") {
+		$contextId = "context-id-".rand(100000000,999999999);
+		$context = $this->_View->getVar("context");
+		$this->_View->set("context", $context.";.$contextId");
+		
+		$element = "<$tag id='$id' class='$class $contextId'>" . 
+			$this->_View->element($element, $values) .
+			"</$tag>";
+		
+		$this->_View->set("context", $context);
+			
+		return $element;
+	}
+}

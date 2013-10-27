@@ -1,0 +1,265 @@
+<?
+App::uses('FormHelper', 'View/Helper');
+App::uses("Assets", "Plugin/UI/Lib");
+
+class UIFormHelper extends FormHelper {
+	public $helpers = array('Html' => array('className' => 'UI.UIHtml'), 'Js' => array('className' => 'UI.UIJs'));
+	
+	public function input($fieldName, $options = array()) {
+		$this->setEntity($fieldName);
+		
+		if (is_string($options)) {
+			$options = array("label" => $options);
+		}
+		
+		$underscored = "field_".str_replace(".", "-", Inflector::underscore($fieldName));
+		
+		$modelKey = $this->model();
+		$fieldKey = $this->field();
+		
+		if (!isset($options['type'])) {
+			$magicType = true;
+			$type = 'text';
+			if (isset($options['options'])) {
+				$type = 'select';
+			} elseif (in_array($fieldKey, array('psword', 'passwd', 'password'))) {
+				$type = 'password';
+			} elseif (isset($options['checked'])) {
+				$type = 'checkbox';
+			} elseif ($fieldDef = $this->_introspectModel($modelKey, 'fields', $fieldKey)) {
+				$t = $fieldDef['type'];
+				$primaryKey = $this->fieldset[$modelKey]['key'];
+			}
+
+			if (isset($t)) {
+				$map = array(
+					'string' => 'text', 'datetime' => 'datetime',
+					'boolean' => 'checkbox', 'timestamp' => 'datetime',
+					'text' => 'textarea', 'time' => 'time',
+					'date' => 'date', 'float' => 'number',
+					'integer' => 'number'
+				);
+
+				if (isset($this->map[$t])) {
+					$type = $this->map[$t];
+				} elseif (isset($map[$t])) {
+					$type = $map[$t];
+				}
+				if ($fieldKey == $primaryKey) {
+					$type = 'hidden';
+				}
+				
+			}
+			if (preg_match('/_id$/', $fieldKey) && $type !== 'hidden') {
+				$type = 'select';
+			}
+
+			if ($modelKey === $fieldKey) {
+				$type = 'select';
+			}
+		} else {
+			$type = $options["type"];
+		}
+		
+		$types = array('checkbox', 'radio', 'select');
+		
+		if (
+			(!isset($options['options']) && in_array($type, $types)) ||
+			(isset($magicType) && $type == 'text')
+		) {
+			$varName = Inflector::variable(
+				Inflector::pluralize(preg_replace('/_id$/', '', $fieldKey))
+			);
+			$varOptions = $this->_View->getVar($varName);
+			if (is_array($varOptions)) {
+				if ($type !== 'radio') {
+					$type = 'select';
+				}
+			}
+		}
+		
+		if (!isset($options["div"]) || $options["div"]) {
+			if (!isset($options["div"]) ) {
+				$options["div"] = array();
+			}
+			
+			if (!isset($options["div"]["class"])) {
+				$options["div"]["class"] = "input $type";
+			}
+			
+			if (isset($t)) {
+				$underscored = "field_type_".str_replace(".", "-", Inflector::underscore($t)) . " $underscored";
+			}
+			
+			
+			$options["div"]["class"] = ( $options["div"]["class"] != "" ? trim($options["div"]["class"])." " : "" ) . "field $underscored";
+		}
+
+		return parent::input($fieldName, $options);
+	}
+	
+	public function searchInput($fieldName, $options = array()) {
+		if (isset($this->_View->viewVars["searchFields"])) {
+			$search = $this->_View->viewVars["searchFields"];
+			if (isset($search[$fieldName])) {
+				$options["value"] = $search[$fieldName];
+			}
+		}
+		
+		return $this->input($fieldName, $options);
+	}
+	
+	/**
+	* Reads the model's configuration and builds a form based on it's fields definitions
+	* users $prefix to build fields for associations
+	* 
+	*/
+	public function objectForm($fields, $model = null, $alias = null, $viewform = false) {
+		$form = "";
+		$types = array();
+		$extraopts = array();
+		
+		foreach ($fields as $field) {
+			if (is_array($field) ){
+				if (in_array($field[0], array("media", "div", "link", "tag", "para")) ) {
+					$form .= call_user_func_array(array($this->Html, $field[0]), $field[1]);
+					continue;
+				}
+				
+				$options = $field[1];
+				$field = $field[0];
+			}
+			
+			if (strstr($field, ".")) {
+				list ($model, $key) = explode(".", $key);
+			} else {
+				//pr($this->request);
+				if (!$model) {
+					$model = Inflector::camelize(Inflector::singularize($this->request->params["controller"]));
+				}
+				$key = $field;
+			}
+			
+			if (!$alias) $alias = $model;
+			
+			$types = $this->entityFields($model);
+			
+			// if field is not defined in db, and it's not a defined html helper func, then just print whatever it is
+			if (!isset($types[$key])) {
+				$form .= $key;
+				continue;
+			}
+			
+			if (!isset($this->configs[$model])) {
+				try {
+					Configure::load($model, "objects");
+					$this->configs[$model] = Configure::read("$model.Fields");
+				} catch (Exception $e) {
+					$this->configs[$model] = array();
+				}
+				
+			}
+			
+			$value = $this->entityConfig($model, "Fields", $key);
+			
+			unset($label);
+			
+			if (is_array($value)) {
+				// get properties from array
+				extract($value);
+			} else {
+				$label = $key;
+				unset($preprint);
+				unset($break);
+			}
+			
+			if (!isset($label)) $label = $key;
+			
+			if (!isset($options)) $options = array();
+			
+			if (isset($options["label"])) {
+				$label = $options["label"];
+			}
+			
+			if ($types[$key] == "virtual") {
+				$type = "text";
+			} else {
+				$type = $types[$key];
+			}
+			
+			if (substr($type, 0, 5) == "enum(") {
+				$enumopts = explode("','", substr($type, 6, -2));
+				$type = "enum";
+			}
+			
+			$fieldlist = array();
+			$labelcolon = $label != "" ? $label . ":" : false;
+			
+			// process direct options, before, after, between and separator
+			foreach (array("after", "before", "between", "separator") as $prop) {
+				if (is_array($value) && isset($value[$prop])) {
+					$extraopts[$prop] = $value[$prop];
+				}
+			}
+			
+			switch ($type) {
+				case "datetime":
+                case "date":
+					if (isset($options["range"]) && $options["range"]) {
+						$fieldlist = array("$alias.{$key}_fromdate" => array("label" => $label." ". __("desde") . ":" ),
+							"$alias.{$key}_todate" => array("label" => $label." ". __("hasta") . ":" ));
+					} else {
+						$fieldlist = array("$alias.{$key}" => array("label" => $labelcolon, "type" => "text" ));
+					}
+					break;
+				case "enum":
+					if (isset($options["options"]))
+						$opts = $options["options"];
+					else {
+						$func = "{$key}TypesArray";
+						$opts = Assets::$func();
+						if (empty($opts)) $opts = array_combine($enumopts, $enumopts);
+						if (!isset($options["empty"])) {
+							$empty = __("Seleccione")."...";
+						} else {
+							$empty = $options["empty"];
+						}
+					}
+					$fieldlist = array("$alias.$key" => array("label" => $labelcolon, "options" => $opts, "empty" => $empty ));
+					break;
+				case "boolean":
+					$fieldlist = array("$alias.$key" => array("label" => ($label != "" ? $label : false)));
+					break;
+				case "string":
+				default:
+					$fieldlist = array("$alias.$key" => array("label" => $labelcolon));
+                    break;
+			}
+			
+			
+			foreach ($fieldlist as $fieldname => $fieldopts) {
+				// manage the disabled opt
+				if ($viewform) {
+					switch ($type) {
+						case "enum":
+							unset($fieldopts["options"]);
+							$fieldopts["type"] = "text";
+							
+						default: 
+							$fieldopts[] = "disabled";
+					}
+					
+				}
+				
+				$form .= $this->searchInput($fieldname, $fieldopts + $extraopts);
+			}
+			
+			
+			if (isset($break)) $form .= "<div class='clearfix'></div>";
+			unset($break);
+			
+		}
+		
+		return $form;
+	}
+}

@@ -1,0 +1,44 @@
+html {
+	height: 100%;
+}
+body {
+	height: 100%;
+	font-family: Droid Sans,sans-serif;
+	background-color: #fff;background: #003d4c;
+color: #fff;
+/*font-family: 'UbuntuRegular';*/
+font-size: 90%;
+margin: 0;
+}
+
+#header {
+	background: #003d4c; position: relative; z-index: 3;padding: 4px 20px;height: 42px;
+}
+#header #logo { font-family: UbuntuBold; font-size: 32px;float: left;
+margin-right: 20px; }
+
+.notifier .icon .counter {
+	border-radius: 4px; font-family: arial; font-size: 8px;
+}
+
+.notifier .icon .counter.warnings {
+	background-color: #fbff53; color: #000;
+}
+
+.notifier .icon .counter.notices {
+	background-color: #7cec00; color: #000;
+}
+
+.notifier .icon .counter.alerts {
+	background-color: #db0000; color: #fff;
+}
+
+#toolbar {
+	position: absolute; top: 0; left: 0; height: 100%; background-color: #005700;direction: rtl; width: 50px;
+}
+#toolbar > * {
+	margin: 0;
+}
+#toolbar > *:first-child {
+	margin-top: 50px;
+}

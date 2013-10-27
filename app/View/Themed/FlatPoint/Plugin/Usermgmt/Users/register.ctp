@@ -1,0 +1,115 @@
+<?php
+/*
+	This file is part of UserMgmt.
+
+	Author: Chetan Varshney (http://ektasoftwares.com)
+
+	UserMgmt is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	UserMgmt is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+*/
+?>
+<?
+$template = "register";
+
+$model = Inflector::singularize(Inflector::camelize($this->request->controller));
+
+if (!isset($mode)) {
+	// check for modelScope and entityPath to know the default mode to use based on the model config
+	$mode = "";
+}
+
+$action = "form";
+?>
+<?
+// if there's no model scope, and there is a request parameter, set it here
+$form_open = isset($this->request->named["modelScope"]) ? $this->Form->create($this->request->named["modelScope"], array("action" => "register")) : $this->Form->create($model, array("action" => "register"));
+$form_submit = $this->Form->submit(__("Enviar"));
+
+$setPath = false;
+$options = array("action" => "form");
+$title = __("Registrarse en Alfa 1 Argentina");
+?>
+<div class="login-container register">
+<? print $this->Entity->form($model, $template, $mode, compact("options", "form_open", "form_submit", "title"), compact("setPath", "action")); ?>
+</div>
+<?
+/*
+
+<div class="umtop">
+	<?php echo $this->Session->flash(); ?>
+	<div class="um_box_up"></div>
+	<div class="um_box_mid">
+		<div class="um_box_mid_content">
+			<div class="um_box_mid_content_top">
+				<span  class="umstyle2"><?php echo $this->Html->link(__("Ingresar con mi usuario y contraseña",true),"/login") ?></span>
+				<span class="umstyle2" style="float:right"><?php echo $this->Html->link(__("Home",true),"/") ?></span>
+				<div style="clear:both"></div>
+			</div>
+			<div class="umhr"></div>
+			<div class="um_box_mid_content_mid" id="register">
+				<div class="um_box_mid_content_mid_left">
+					
+			
+					<div>
+						<div class="umstyle3"><?php echo __('Username');?><font color='red'>*</font></div>
+						<div class="umstyle4" ><?php echo $this->Form->input("username" ,array('label' => false,'div' => false,'class'=>"umstyle5" ))?></div>
+						<div style="clear:both"></div>
+					</div>
+					<div>
+						<div class="umstyle3"><?php echo __('First Name');?><font color='red'>*</font></div>
+						<div class="umstyle4" ><?php echo $this->Form->input("first_name" ,array('label' => false,'div' => false,'class'=>"umstyle5" ))?></div>
+						<div style="clear:both"></div>
+					</div>
+					<div>
+						<div class="umstyle3"><?php echo __('Last Name');?><font color='red'>*</font></div>
+						<div class="umstyle4" ><?php echo $this->Form->input("last_name" ,array('label' => false,'div' => false,'class'=>"umstyle5" ))?></div>
+						<div style="clear:both"></div>
+					</div>
+					<div>
+						<div class="umstyle3"><?php echo __('Email');?><font color='red'>*</font></div>
+						<div class="umstyle4" ><?php echo $this->Form->input("email" ,array('label' => false,'div' => false,'class'=>"umstyle5" ))?></div>
+						<div style="clear:both"></div>
+					</div>
+					<div>
+						<div class="umstyle3"><?php echo __('Password');?><font color='red'>*</font></div>
+						<div class="umstyle4"><?php echo $this->Form->input("password" ,array("type"=>"password",'label' => false,'div' => false,'class'=>"umstyle5" ))?></div>
+						<div style="clear:both"></div>
+					</div>
+					<div>
+						<div class="umstyle3"><?php echo __('Confirm Password');?><font color='red'>*</font></div>
+						<div class="umstyle4"><?php echo $this->Form->input("cpassword" ,array("type"=>"password",'label' => false,'div' => false,'class'=>"umstyle5" ))?></div>
+						<div style="clear:both"></div>
+					</div>
+			<?php   if(USE_RECAPTCHA && PRIVATE_KEY_FROM_RECAPTCHA !="" && PUBLIC_KEY_FROM_RECAPTCHA !="") { ?>
+					<div>
+						<div class="umstyle4" style="margin-left:45px"><?php echo $this->UserAuth->showCaptcha(isset($this->validationErrors['User']['captcha'][0]) ? $this->validationErrors['User']['captcha'][0] : ""); ?></div>
+						<div style="clear:both"></div>
+					</div>
+			<?php   } ?>
+					<div>
+						<div class="umstyle3"></div>
+						<div class="umstyle4"><?php echo $this->Form->Submit(__('Sign Up'));?></div>
+						<div style="clear:both"></div>
+					</div>
+					
+				</div>
+				<div class="um_box_mid_content_mid_right" align="right"></div>
+				<div style="clear:both"></div>
+			</div>
+		</div>
+	</div>
+	<div class="um_box_down"></div>
+</div>
+<script>
+document.getElementById("UserUsername").focus();
+</script>*/
