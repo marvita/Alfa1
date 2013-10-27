@@ -188,13 +188,5 @@ class PatientFile extends AppModel {
 		),
 	);
   
-  
-public function getFichas($limit) {
-      $fichas = array();
-      $fichas = $this->find('all', array('limit' => $limit));
  
-      return $fichas;
-    }  
-  
-  
 }

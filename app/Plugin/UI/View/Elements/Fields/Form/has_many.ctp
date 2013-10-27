@@ -1,4 +1,6 @@
 <?
+print 'has many';
+
 list($plugin, $association) = pluginSplit($association);
 $plugin = Inflector::underscore($plugin);
 $controller = Inflector::underscore(Inflector::pluralize($association));

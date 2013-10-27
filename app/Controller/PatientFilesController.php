@@ -133,9 +133,34 @@ class PatientFilesController extends AppController {
           }
       }
       parent::form($id);
-       
-    
+
   }  
-  
+
+/**
+ * delete method
+ *
+ * @throws NotFoundException
+ * @param string $id
+ * @return void
+ * 
+ *  26/10/2013 Marta: Agregar esta funcion delete para borrar pacientes o entidad. En /alfa1argentina.org/httpdocs/alfa1/app/Model/Patient.php
+ *                    poner en true excluded en el array $hasMany, lo mismo en dependent para que borre los registros relacionados a esta entidad Pacientes 
+ */
+  public function delete($id = null) {
+     
+    $this->PatientFile->id = $id;
+    if (!$this->PatientFile->exists()) {
+      throw new NotFoundException(__('Invalid publication'));
+    }
+ 
+    /* Marta: agregado para borrar paciente y ficha asociada. El segundo parametro permite borrar en cascada. 
+     * Para ello se debe poner en true exclusive y dependent en el array $hasMany del modelo s*/
+    if ($this->PatientFile->deleteAll(array('PatientFile.id'=>$id), true)) {
+      $this->Session->setFlash(__('La ficha ha sido borrada.'));
+    } else {
+      $this->Session->setFlash(__('La ficha no se ha podido borrar. Por favor, intentelo nuevamente.'));
+    }
+    return $this->redirect(array('action' => 'index'));
+  }   
   
 }

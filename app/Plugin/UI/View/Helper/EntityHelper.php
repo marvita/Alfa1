@@ -390,4 +390,55 @@ class EntityHelper extends AppHelper {
 
 		return $configHidden || ($hidden && !$shown);
 	}
+	
+	public function traducir($tabla){
+    $tr = '';
+    
+    switch ($tabla){
+      case 'SmokingHistory':
+        $tr = 'Tabaquismo';
+        break;
+      case 'AatDetermination':
+        $tr = 'Motivo de la determinación de AAT';
+        break;       
+      case 'ClinicalHistory':
+        $tr = 'Historia clínica';
+        break;  
+      case 'OtherDiagnostic':
+        $tr = 'Otros diagnósticos';
+        break;    
+      case 'ChestTac':
+        $tr = 'Datos TC';
+        break; 
+      case 'CurrentTreatment':
+        $tr = 'Tratamiento actual';
+        break;  
+      case 'SustitutiveTreatment':
+        $tr = 'Tratamiento sustitutivo';
+        break;   
+      case 'PulmonaryStudy':
+        $tr = 'Funcionalismo pulmonar';
+        break; 
+      case 'HepaticEnzyme':
+        $tr = 'Enzimas hepáticas';
+        break; 
+      case 'StGeorgeCuestionnaire':
+        $tr = 'Datos cuestionario St. George';
+        break;
+      case 'WorkingHistory':
+        $tr = 'Historia laboral';
+        break;  
+      case 'BloodSample':
+        $tr = 'Muestras sanguíneas';
+        break;     
+      case 'FinalDate':
+        $tr = 'Fecha final';
+        break;                                                                                          
+    }
+    
+
+    
+    return $tr;
+  }
+  
 }

@@ -11,7 +11,6 @@ $fieldConfig = $this->Entity->entityConfig($model, 'Fields');
 $modelName = $this->Entity->entityConfig($model, "Name");
 if (empty($modelName)) $modelName = Inflector::humanize(Inflector::underscore($model));
 
-
 $id = $this->Entity->fieldValue("id");
 
 if (!isset($title)) {
@@ -27,7 +26,10 @@ foreach (array("belongsTo", "hasMany", "hasAndBelongsToMany", "hasOne") as $asso
 	<div class="<?= Inflector::underscore($assoc)?>">
 		<?
 		foreach ($entity->$assoc as $key => $values) {
-			if (!isset($config[$key]['hide']) || (is_array($config[$key]['hide']) && !in_array('form', $config[$key]['hide'])) && ($config[$key]['hide'] != 'form')) {
+	
+      print '<h4>' . $this->Entity->traducir($key) . '</h4>';
+      
+  		if (!isset($config[$key]['hide']) || (is_array($config[$key]['hide']) && !in_array('form', $config[$key]['hide'])) && ($config[$key]['hide'] != 'form')) {
 				if ($assoc != "hasOne") {
 					print $this->Entity->$assoc($key, "", array_merge($options, array("model" => $model)));
 				} else {
@@ -54,7 +56,6 @@ $this->assign('fields', '');
 $this->start("fields"); ?>
 	<?
 	foreach ($fields as $key => $type) {
-
     /* Marta: evita mostrar el key en el view. Buscar otra manera */
     if ($key=='id') {
     }else{
@@ -74,4 +75,4 @@ $this->start("fields"); ?>
 <? $this->assign('contextLinks', '');
 $this->assign('editLinks', ''); ?>
 
-<?php // print ' - Testing '. $modelName . ' Ver - ';?>
+<?php  // print ' - Testing '. $modelName . ' Ver - ';?>

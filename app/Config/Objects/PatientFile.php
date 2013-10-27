@@ -10,10 +10,11 @@ $config = array(
 	"PatientFile.Index" => array(
 		"Title" => __("Fichas"),
 		"ExtraFields" => array(
-			"Patient.NameDNI" => array("label" => __("Paciente"), "priority" => -1)
+			"Patient.Iniciales" => array("label" => __("Paciente"), "priority" => -1)
 		)
 	),
 	"PatientFile.Fields" => array(
+	  "Iniciales" => array("label" => __("Iniciales (3)"), "shortLabel" => __("Iniciales")),
 		"Complete" => array("label" => __("Completa"), "wrapperClass" => "inline_block small", "printFunc" => "YesNo"),
 		"Closed" => array("label" => __("Cerrada"), "wrapperClass" => "inline_block small", "printFunc" => "YesNo"),
 		"Stage" => array("label" => __("Etapa"), "wrapperClass" => "inline_block small"),
@@ -44,8 +45,11 @@ $config = array(
 	/* this fields will not be displayed in default form and view templates */
 	/* this settings define how associations are displayed in default form and view templates */
 	"PatientFile.Associations" => array(
-		"Patient" => array(
-			'label' => __('Paciente'), 'mode' => 'hybrid', 'addOrder' => 'append', 'addMode' => 'popup'
+	  "Patient" => array(
+			'label' => __('Paciente'), 
+			'mode' => 'hybrid', 
+			'addOrder' => 'append', 
+			'addMode' => 'popup'
 		),
 		"SmokingHistory" => array(
 			'label' => __('Tabaquismo'), 'shortLabel' => __('Tabaquismo'),

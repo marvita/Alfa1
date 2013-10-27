@@ -1,4 +1,5 @@
 <?
+
 $this->extend("/form-wrapper");
 
 $fields = $this->Entity->entityFields($model);
@@ -51,10 +52,13 @@ $this->assign('contextLinks', $this->element("Links/contextlinks"));
 	
 $this->assign('fields', '');
 $this->start('fields');
-	foreach ($fields as $key => $type) {
-		if (!$this->Entity->hiddenField($key, $type, "form-has_many", $fieldConfig, $id)) {
-			print $this->Entity->field($key, $mode);
-		}
+	foreach ($fields as $key => $type) {  
+	  if($key=='id'){
+	  }else{
+  		if (!$this->Entity->hiddenField($key, $type, "form-has_many", $fieldConfig, $id)) {
+  			print $this->Entity->field($key, $mode);
+  		}
+    }  
 	}
 
 	if (array_key_exists("Class", $fields)) {
@@ -71,5 +75,5 @@ $this->start('fields');
 	print $this->Form->input(Entity::currentPathField() . ".__ajax_deleted", array("type" => "hidden", "class" => "ajaxDelete"));
 $this->end();
 
-
 $this->assign('editLinks', $this->element("Links/editlinks"));
+
