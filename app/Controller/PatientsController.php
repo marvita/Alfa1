@@ -176,7 +176,6 @@ class PatientsController extends AppController {
 		
 	}
   
-  
 /**
  * delete method
  *
