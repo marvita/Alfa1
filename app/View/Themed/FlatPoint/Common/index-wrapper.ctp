@@ -6,10 +6,11 @@
     </div>
 
     <div class="charts clearfix">
-        <div class="statistic_chart pull-right">
+        <!-- <div class="statistic_chart pull-right"> -->
+          <div class="pull-left">
         	    <div id="sparkline" class="pull-left sparkline"></div> 
 	            <div class="bars_label first_label pull-left">
-	                <span class="value"><? echo $this->fetch("actions") ?></span>
+	                <span class="value"><? echo $this->fetch("actions") ?> <i class="icon-plus" style="color:#0088CC"></i></span>
 	            </div>
 
 	        

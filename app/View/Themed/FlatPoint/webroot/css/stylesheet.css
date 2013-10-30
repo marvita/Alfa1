@@ -165,11 +165,13 @@ span.required {
 }
 
 .bars_label span.value {
-  font-size: 16px;
+  /*font-size: 16px;*/
+   font-size: 15px;
 }
 
 .bars_label:last-child span {
   margin-right: 0;
+  padding-left: 10px; /* agregado por Marta */
 }
 
 /* User bar */
