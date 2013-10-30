@@ -30,7 +30,7 @@ if ( (!$this->request->requested || !$this->request->bare) ) {
 		
 	$this->start("actions");
 	if (!$this->UserAuth->isAdmin())
-		echo $this->Js->popup(__("Agregar"), array("controller" => $controller, "action" => "form"), array("width" => "900" ));
+		echo $this->Js->popup(__("Agregar"), array("controller" => $controller, "action" => "form"), array("width" => "900" )) . ' <i class="icon-plus" style="color:#0088CC"></i>';
 	$this->end();
 	
 	$action = substr($this->request->params["action"], 6);
