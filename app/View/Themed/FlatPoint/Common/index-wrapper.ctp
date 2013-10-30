@@ -10,7 +10,9 @@
           <div class="pull-left">
         	    <div id="sparkline" class="pull-left sparkline"></div> 
 	            <div class="bars_label first_label pull-left">
-	                <span class="value"><? echo $this->fetch("actions") ?> <i class="icon-plus" style="color:#0088CC"></i></span>
+	                <span class="value">
+	                  <? echo $this->fetch("actions") ?> 
+	                </span>
 	            </div>
 
 	        
